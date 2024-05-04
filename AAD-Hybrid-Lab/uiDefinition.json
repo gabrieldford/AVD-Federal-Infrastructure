@@ -39,7 +39,9 @@
 									"defaultValue": "contoso.local",
 									"toolTip": "Use only allowed characters",
 									"constraints": {
-										"required": true
+										"required": true,
+										"regex": "^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}$",
+										"validationMessage": "Only alphanumeric characters and hyphens are allowed, and the value must be a valid domain name."
 									},
 									"visible": true
 								},
@@ -51,7 +53,9 @@
 									"defaultValue": "avdfedrockstar#.onmicrosoft.us",
 									"toolTip": "replace the # with the correct value",
 									"constraints": {
-										"required": true
+										"required": true,
+										"regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]?(\\.[a-z][a-z0-9-]{1,61}[a-z0-9]?)?(\\.[a-z][a-z0-9-]{1,61}[a-z0-9]?)?$",
+										"validationMessage": "Only alphanumeric characters and hyphens are allowed, and the value must be a valid domain name."
 									},
 									"visible": true
 								}
@@ -87,8 +91,8 @@
 									"toolTip": "",
 									"constraints": {
 										"required": true,
-										"regex": "^[a-zA-Z0-9]{8,}$",
-										"validationMessage": "Password must be at least 8 characters long, contain only numbers and letters"
+										"regex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$",
+										"validationMessage": "Password must be at least 12 characters long and contain Uppercase, lowercase, numbers, and special characters."
 									},
 									"options": {
 										"hideConfirmation": false
@@ -105,8 +109,8 @@
 									"toolTip": "Specify the password of the users created by the this template.",
 									"constraints": {
 										"required": true,
-										"regex": "^[a-zA-Z0-9]{8,}$",
-										"validationMessage": "Password must be at least 8 characters long, contain only numbers and letters"
+										"regex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$",
+										"validationMessage": "Password must be at least 12 characters long and contain Uppercase, lowercase, numbers, and special characters."
 									},
 									"options": {
 										"hideConfirmation": false
