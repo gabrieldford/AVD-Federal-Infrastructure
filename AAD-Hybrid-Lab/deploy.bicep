@@ -70,16 +70,7 @@ param entraIdPrimaryOrCustomDomainName string
 param defaultUserPassword string
 
 @description('Select a VM SKU (please ensure the SKU is available in your selected region).')
-@allowed([
-  'Standard_DS2_v2'
-  'Standard_D2_v3'
-  'Standard_D2_v4'
-  'Standard_D2s_v3'
-  'Standard_D2s_v4'
-  'Standard_D4_v4'
-  'Standard_D4s_v4'
-])
-param vmSize string = 'Standard_D2s_v4'
+param vmSize string = 'Standard_B2ms'
 
 @description('The subnet Resource Id to which the Domain Controller will be attached.')
 param adSubnetResourceId string

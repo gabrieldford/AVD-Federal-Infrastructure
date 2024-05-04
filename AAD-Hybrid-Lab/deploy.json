@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.26.170.59819",
-      "templateHash": "9957438738958734270"
+      "templateHash": "15076660319440928787"
     }
   },
   "parameters": {
@@ -110,16 +110,7 @@
     },
     "vmSize": {
       "type": "string",
-      "defaultValue": "Standard_D2s_v4",
-      "allowedValues": [
-        "Standard_DS2_v2",
-        "Standard_D2_v3",
-        "Standard_D2_v4",
-        "Standard_D2s_v3",
-        "Standard_D2s_v4",
-        "Standard_D4_v4",
-        "Standard_D4s_v4"
-      ],
+      "defaultValue": "Standard_B2ms",
       "metadata": {
         "description": "Select a VM SKU (please ensure the SKU is available in your selected region)."
       }

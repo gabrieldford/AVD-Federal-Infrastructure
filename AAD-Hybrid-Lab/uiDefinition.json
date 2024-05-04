@@ -188,9 +188,9 @@
 									"label": "Virtual Machine Size",
 									"toolTip": "Select the size of the virtual machines. Multi-session hosts should have 4 - 24 vCPUs. Single session host should have 2 or more vCPUs.",
 									"recommendedSizes": [
-										"Standard_D4ads_v5",
-										"Standard_D8ads_v5",
-										"Standard_D16ads_v5"
+										"Standard_B2ms",
+										"Standard_D2as_v5",
+										"Standard_DS2_v2"
 									],
 									"constraints": {
 										"allowedSizes": "[map(steps('basics').vm.vmSizesApi.value, (item) => parse(concat('\"', item.name, '\"')))]"
