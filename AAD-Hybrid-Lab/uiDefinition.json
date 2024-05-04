@@ -208,8 +208,11 @@
             "location": "[steps('basics').resourceScope.location.name]",
             "resourceGroupId": "[steps('basics').resourceScope.resourceGroup.id]",
             "parameters": {
+				"adminUserName": "[steps('basics').users.adminUserName]",
+				"adminPassword": "[steps('basics').users.adminPassword]",
+				"defaultUserPassword": "[steps('basics').users.defaultUserPassword]",
 				"adDomainName": "[steps('basics').domainAndTenant.adDomainName]",
-				"customupnsuffix": "[steps('basics').domainAndTenant.customUpnSuffix]",
+				"entraIdPrimaryOrCustomDomainName": "[steps('basics').domainAndTenant.customUpnSuffix]",
 				"adSubnetResourceId": "[steps('basics').vm.subnet]",
 				"vmSize": "[steps('basics').vm.vmSize]"
             }

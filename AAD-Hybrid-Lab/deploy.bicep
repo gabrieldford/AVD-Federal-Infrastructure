@@ -63,7 +63,7 @@ param usersArray array = [
 ]
 
 @description('This needs to be specified in order to have a uniform logon experience within AVD')
-param customupnsuffix string
+param entraIdPrimaryOrCustomDomainName string
 
 @description('Enter the password that will be applied to each user account to be created in AD.')
 @secure()
@@ -130,7 +130,7 @@ resource adVMName_Microsoft_Powershell_DSC 'Microsoft.Compute/virtualMachines/ex
         }
         {
           Name: 'customupnsuffix'
-          Value: customupnsuffix
+          Value: entraIdPrimaryOrCustomDomainName
           TypeName: 'System.Object'
         }
         {

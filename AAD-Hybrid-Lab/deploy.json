@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.26.170.59819",
-      "templateHash": "2487821148113533478"
+      "templateHash": "9957438738958734270"
     }
   },
   "parameters": {
@@ -96,7 +96,7 @@
         "description": "JSON object array of users that will be loaded into AD once the domain is established."
       }
     },
-    "customupnsuffix": {
+    "entraIdPrimaryOrCustomDomainName": {
       "type": "string",
       "metadata": {
         "description": "This needs to be specified in order to have a uniform logon experience within AVD"
@@ -166,7 +166,7 @@
             },
             {
               "Name": "customupnsuffix",
-              "Value": "[parameters('customupnsuffix')]",
+              "Value": "[parameters('entraIdPrimaryOrCustomDomainName')]",
               "TypeName": "System.Object"
             },
             {
