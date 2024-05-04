@@ -90,9 +90,7 @@
 									},
 									"toolTip": "",
 									"constraints": {
-										"required": true,
-										"regex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$",
-										"validationMessage": "Password must be at least 12 characters long and contain Uppercase, lowercase, numbers, and special characters."
+										"required": true
 									},
 									"options": {
 										"hideConfirmation": false
@@ -108,9 +106,7 @@
 									},
 									"toolTip": "Specify the password of the users created by the this template.",
 									"constraints": {
-										"required": true,
-										"regex": "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$",
-										"validationMessage": "Password must be at least 12 characters long and contain Uppercase, lowercase, numbers, and special characters."
+										"required": true
 									},
 									"options": {
 										"hideConfirmation": false
