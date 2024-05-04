@@ -81,25 +81,73 @@ var companyNamePrefix = split(adDomainName, '.')[0]
 var adVMName = toUpper('${companyNamePrefix}${addcVMNameSuffix}')
 var adDSCTemplate = '${assetLocation}DSC/adDSC.zip'
 var adDSCConfigurationFunction = 'adDSCConfiguration.ps1\\DomainController'
+var imageOffer = 'WindowsServer'
+var imagePublisher = 'MicrosoftWindowsServer'
+var imageSKU = '2019-Datacenter'
 
-var virtualNetworkName = split(adSubnetResourceId, '/')[8]
+var adNicName = 'ad-${networkInterfaceName}${deploymentNumber}'
 
-module adVM 'Templates/adDeploy.bicep' = {
-  name: 'adVMs'
-  params: {
-    adminPassword: adminPassword
-    adminUsername: adminUsername
-    subnetResourceId: adSubnetResourceId
-    adVMName: adVMName
-    location: location
-    NetworkInterfaceName: networkInterfaceName
-    vmSize: vmSize
-    deploymentNumber: deploymentNumber
+resource adNic 'Microsoft.Network/networkInterfaces@2019-12-01' = {
+  name: adNicName
+  location: location
+  tags: {
+    displayName: 'adNIC'
+  }
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig${deploymentNumber}'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: {
+            id: adSubnetResourceId
+          }
+        }
+      }
+    ]
+  }
+}
+
+resource adVM 'Microsoft.Compute/virtualMachines@2019-07-01' = {
+  name: adVMName
+  location: location
+  tags: {
+    displayName: 'adVM'
+  }
+  properties: {
+    hardwareProfile: {
+      vmSize: vmSize
+    }
+    osProfile: {
+      computerName: adVMName
+      adminUsername: adminUsername
+      adminPassword: adminPassword
+    }
+    storageProfile: {
+      imageReference: {
+        publisher: imagePublisher
+        offer: imageOffer
+        sku: imageSKU
+        version: 'latest'
+      }
+      osDisk: {
+        caching: 'ReadWrite'
+        createOption: 'FromImage'
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [
+        {
+          id: adNic.id
+        }
+      ]
+    }
   }
 }
 
 resource adVMName_Microsoft_Powershell_DSC 'Microsoft.Compute/virtualMachines/extensions@2019-07-01' = {
-  name: '${adVMName}/Microsoft.Powershell.DSC'
+  name: 'Microsoft.Powershell.DSC'
+  parent: adVM
   location: location
   tags: {
     displayName: 'adDSC'
@@ -154,19 +202,4 @@ resource adVMName_Microsoft_Powershell_DSC 'Microsoft.Compute/virtualMachines/ex
       }
     }
   }
-  dependsOn: [
-    adVM
-  ]
-}
-
-module virtualNetworkDNSUpdate 'Templates/deployVNetDNS.bicep' = {
-  name: 'virtualNetworkDNSUpdate'
-  params: {
-    location: location
-    virtualNetworkName: virtualNetworkName
-    dnsIP: adVM.outputs.vmIPAddress
-  }
-  dependsOn: [
-    adVMName_Microsoft_Powershell_DSC
-  ]
 }

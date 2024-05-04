@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.26.170.59819",
-      "templateHash": "15076660319440928787"
+      "templateHash": "13568392321653472850"
     }
   },
   "parameters": {
@@ -129,13 +129,79 @@
     "adVMName": "[toUpper(format('{0}{1}', variables('companyNamePrefix'), variables('addcVMNameSuffix')))]",
     "adDSCTemplate": "[format('{0}DSC/adDSC.zip', parameters('assetLocation'))]",
     "adDSCConfigurationFunction": "adDSCConfiguration.ps1\\DomainController",
-    "virtualNetworkName": "[split(parameters('adSubnetResourceId'), '/')[8]]"
+    "imageOffer": "WindowsServer",
+    "imagePublisher": "MicrosoftWindowsServer",
+    "imageSKU": "2019-Datacenter",
+    "adNicName": "[format('ad-{0}{1}', variables('networkInterfaceName'), parameters('deploymentNumber'))]"
   },
   "resources": [
     {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2019-12-01",
+      "name": "[variables('adNicName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "adNIC"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[format('ipconfig{0}', parameters('deploymentNumber'))]",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[parameters('adSubnetResourceId')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "name": "[variables('adVMName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "displayName": "adVM"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('adVMName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('imagePublisher')]",
+            "offer": "[variables('imageOffer')]",
+            "sku": "[variables('imageSKU')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
+      ]
+    },
+    {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2019-07-01",
-      "name": "[format('{0}/Microsoft.Powershell.DSC', variables('adVMName'))]",
+      "name": "[format('{0}/{1}', variables('adVMName'), 'Microsoft.Powershell.DSC')]",
       "location": "[parameters('location')]",
       "tags": {
         "displayName": "adDSC"
@@ -191,250 +257,7 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'adVMs')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2022-09-01",
-      "name": "adVMs",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "adminPassword": {
-            "value": "[parameters('adminPassword')]"
-          },
-          "adminUsername": {
-            "value": "[parameters('adminUsername')]"
-          },
-          "subnetResourceId": {
-            "value": "[parameters('adSubnetResourceId')]"
-          },
-          "adVMName": {
-            "value": "[variables('adVMName')]"
-          },
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "NetworkInterfaceName": {
-            "value": "[variables('networkInterfaceName')]"
-          },
-          "vmSize": {
-            "value": "[parameters('vmSize')]"
-          },
-          "deploymentNumber": {
-            "value": "[parameters('deploymentNumber')]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.26.170.59819",
-              "templateHash": "13675727666981056991"
-            }
-          },
-          "parameters": {
-            "adminPassword": {
-              "type": "securestring",
-              "metadata": {
-                "description": "Admin password"
-              }
-            },
-            "adminUsername": {
-              "type": "string",
-              "metadata": {
-                "description": "Admin username"
-              }
-            },
-            "deploymentNumber": {
-              "type": "string",
-              "defaultValue": "1",
-              "metadata": {
-                "description": "When deploying the stack N times, define the instance - this will be appended to some resource names to avoid collisions."
-              }
-            },
-            "subnetResourceId": {
-              "type": "string",
-              "metadata": {
-                "description": "The resource Id of the subnet to deploy the domain controllers into"
-              }
-            },
-            "adVMName": {
-              "type": "string",
-              "defaultValue": "AZAD"
-            },
-            "location": {
-              "type": "string",
-              "metadata": {
-                "Description": "The region to deploy the resources into"
-              }
-            },
-            "NetworkInterfaceName": {
-              "type": "string",
-              "defaultValue": "NIC",
-              "metadata": {
-                "description": "This is the prefix name of the Network interfaces"
-              }
-            },
-            "vmSize": {
-              "type": "string",
-              "defaultValue": "Standard_D2s_v4",
-              "metadata": {
-                "description": "This is the allowed list of VM sizes"
-              }
-            }
-          },
-          "variables": {
-            "imageOffer": "WindowsServer",
-            "imagePublisher": "MicrosoftWindowsServer",
-            "imageSKU": "2019-Datacenter",
-            "adNicName": "[format('ad-{0}{1}', parameters('NetworkInterfaceName'), parameters('deploymentNumber'))]"
-          },
-          "resources": [
-            {
-              "type": "Microsoft.Network/networkInterfaces",
-              "apiVersion": "2019-12-01",
-              "name": "[variables('adNicName')]",
-              "location": "[parameters('location')]",
-              "tags": {
-                "displayName": "adNIC"
-              },
-              "properties": {
-                "ipConfigurations": [
-                  {
-                    "name": "[format('ipconfig{0}', parameters('deploymentNumber'))]",
-                    "properties": {
-                      "privateIPAllocationMethod": "Dynamic",
-                      "subnet": {
-                        "id": "[parameters('subnetResourceId')]"
-                      }
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              "type": "Microsoft.Compute/virtualMachines",
-              "apiVersion": "2019-07-01",
-              "name": "[parameters('adVMName')]",
-              "location": "[parameters('location')]",
-              "tags": {
-                "displayName": "adVM"
-              },
-              "properties": {
-                "hardwareProfile": {
-                  "vmSize": "[parameters('vmSize')]"
-                },
-                "osProfile": {
-                  "computerName": "[parameters('adVMName')]",
-                  "adminUsername": "[parameters('adminUsername')]",
-                  "adminPassword": "[parameters('adminPassword')]"
-                },
-                "storageProfile": {
-                  "imageReference": {
-                    "publisher": "[variables('imagePublisher')]",
-                    "offer": "[variables('imageOffer')]",
-                    "sku": "[variables('imageSKU')]",
-                    "version": "latest"
-                  },
-                  "osDisk": {
-                    "caching": "ReadWrite",
-                    "createOption": "FromImage"
-                  }
-                },
-                "networkProfile": {
-                  "networkInterfaces": [
-                    {
-                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
-                    }
-                  ]
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
-              ]
-            }
-          ],
-          "outputs": {
-            "vmIPAddress": {
-              "type": "string",
-              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('adNicName')), '2019-12-01').ipConfigurations[0].properties.privateIPAddress]"
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2022-09-01",
-      "name": "virtualNetworkDNSUpdate",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "virtualNetworkName": {
-            "value": "[variables('virtualNetworkName')]"
-          },
-          "dnsIP": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'adVMs'), '2022-09-01').outputs.vmIPAddress.value]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.26.170.59819",
-              "templateHash": "13808861513783271652"
-            }
-          },
-          "parameters": {
-            "virtualNetworkName": {
-              "type": "string"
-            },
-            "dnsIP": {
-              "type": "string"
-            },
-            "location": {
-              "type": "string",
-              "defaultValue": "[resourceGroup().location]"
-            }
-          },
-          "resources": [
-            {
-              "type": "Microsoft.Network/virtualNetworks",
-              "apiVersion": "2019-12-01",
-              "name": "[parameters('virtualNetworkName')]",
-              "location": "[parameters('location')]",
-              "tags": {
-                "displayName": "virtualNetwork"
-              },
-              "properties": {
-                "dhcpOptions": {
-                  "dnsServers": [
-                    "[parameters('dnsIP')]"
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'adVMs')]",
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', split(format('{0}/Microsoft.Powershell.DSC', variables('adVMName')), '/')[0], split(format('{0}/Microsoft.Powershell.DSC', variables('adVMName')), '/')[1])]"
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('adVMName'))]"
       ]
     }
   ]
