@@ -31,34 +31,124 @@ param location string = resourceGroup().location
 @description('JSON object array of users that will be loaded into AD once the domain is established.')
 param usersArray array = [
   {
-    FName: 'Bob'
+    FName: '1Bob'
     LName: 'Jones'
-    SAM: 'bjones'
+    SAM: '1bjones'
   }
   {
-    FName: 'Bill'
+    FName: '1Bill'
     LName: 'Smith'
-    SAM: 'bsmith'
+    SAM: '1bsmith'
   }
   {
-    FName: 'Mary'
+    FName: '1Mary'
     LName: 'Phillips'
-    SAM: 'mphillips'
+    SAM: '1mphillips'
   }
   {
-    FName: 'Sue'
+    FName: '1Sue'
     LName: 'Jackson'
-    SAM: 'sjackson'
+    SAM: '1sjackson'
   }
   {
-    FName: 'Jack'
+    FName: '1Jack'
     LName: 'Petersen'
-    SAM: 'jpetersen'
+    SAM: '1jpetersen'
   }
   {
-    FName: 'Julia'
+    FName: '1Julia'
     LName: 'Williams'
-    SAM: 'jwilliams'
+    SAM: '1jwilliams'
+  }
+  {
+    FName: '2Bob'
+    LName: 'Jones'
+    SAM: '2bjones'
+  }
+  {
+    FName: '2Bill'
+    LName: 'Smith'
+    SAM: '2bsmith'
+  }
+  {
+    FName: '2Mary'
+    LName: 'Phillips'
+    SAM: '2mphillips'
+  }
+  {
+    FName: '2Sue'
+    LName: 'Jackson'
+    SAM: '2sjackson'
+  }
+  {
+    FName: '2Jack'
+    LName: 'Petersen'
+    SAM: '2jpetersen'
+  }
+  {
+    FName: '2Julia'
+    LName: 'Williams'
+    SAM: '2jwilliams'
+  }
+  {
+    FName: '3Bob'
+    LName: 'Jones'
+    SAM: '3bjones'
+  }
+  {
+    FName: '3Bill'
+    LName: 'Smith'
+    SAM: '3bsmith'
+  }
+  {
+    FName: '3Mary'
+    LName: 'Phillips'
+    SAM: '3mphillips'
+  }
+  {
+    FName: '3Sue'
+    LName: 'Jackson'
+    SAM: '3sjackson'
+  }
+  {
+    FName: '3Jack'
+    LName: 'Petersen'
+    SAM: '3jpetersen'
+  }
+  {
+    FName: '3Julia'
+    LName: 'Williams'
+    SAM: '3jwilliams'
+  }
+  {
+    FName: '4Bob'
+    LName: 'Jones'
+    SAM: '4bjones'
+  }
+  {
+    FName: '4Bill'
+    LName: 'Smith'
+    SAM: '4bsmith'
+  }
+  {
+    FName: '4Mary'
+    LName: 'Phillips'
+    SAM: '4mphillips'
+  }
+  {
+    FName: '4Sue'
+    LName: 'Jackson'
+    SAM: '4sjackson'
+  }
+  {
+    FName: '4Jack'
+    LName: 'Petersen'
+    SAM: '4jpetersen'
+  }
+  {
+    FName: '4Julia'
+    LName: 'Williams'
+    SAM: '4jwilliams'
   }
 ]
 
@@ -85,7 +175,7 @@ var imageOffer = 'WindowsServer'
 var imagePublisher = 'MicrosoftWindowsServer'
 var imageSKU = '2019-Datacenter'
 
-var adNicName = 'ad-${networkInterfaceName}${deploymentNumber}'
+var adNicName = '${adVMName}-${networkInterfaceName}-${deploymentNumber}'
 
 resource adNic 'Microsoft.Network/networkInterfaces@2019-12-01' = {
   name: adNicName
