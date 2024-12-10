@@ -121,7 +121,7 @@ resource firewallPolicy 'Microsoft.Network/firewallPolicies@2023-02-01' = {
   tags: tagsByResourceType[?'Microsoft.Network/firewallPolicies'] ?? {}
 }
 
-resource firewallPolicy_AVDCore_RCG 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+resource ruleCollectionGroup_AVDCore 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
   parent: firewallPolicy
   name: 'AVD-Core'
   properties: {
@@ -328,7 +328,7 @@ resource firewallPolicy_AVDCore_RCG 'Microsoft.Network/firewallPolicies/ruleColl
   }
 }
 
-resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+resource ruleCollectionGroup_AVDOptional 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
   parent: firewallPolicy
   name: 'AVD-Optional'
   properties: {
@@ -551,12 +551,12 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
     ]
   }
   dependsOn: [
-    firewallPolicy_AVDCore_RCG
+    ruleCollectionGroup_AVDCore
   ]
 }
 
-resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
-  name: 'ADDS_Core'
+resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+  name: 'ADDS-Core'
   parent: firewallPolicy
   properties: {
     priority: 5000
@@ -570,12 +570,12 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
           {
-            name: 'AllowTCPAVDSubnetToDCSubnet'
+            name: 'Bastion To DC RDP'
             ruleType: 'NetworkRule'
             sourceAddresses: [bastionSubnetPrefix]
             destinationAddresses: addsSubnetAddresses
             destinationPorts: [
-              '3389' // RDP
+              '3389'
             ]
             ipProtocols: [
               'TCP'
@@ -592,7 +592,7 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
           {
-            name: 'AllowTCPAVDSubnetToDCSubnet'
+            name: 'AVD Subnet to DC Subnet TCP'
             ruleType: 'NetworkRule'
             sourceAddresses: avdSubnetAddresses
             destinationAddresses: addsSubnetAddresses
@@ -612,7 +612,7 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
             ]
           }
           {
-            name: 'AllowUDPAVDSubnetToDCSubnet'
+            name: 'AVD Subnet to DC Subnet UDP'
             ruleType: 'NetworkRule'
             sourceAddresses: avdSubnetAddresses
             destinationAddresses: addsSubnetAddresses
@@ -635,26 +635,24 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
           {
-            name: 'AllowDCToWindowsUpdate'
             ruleType: 'ApplicationRule'
-            sourceAddresses: addsSubnetAddresses
-            targetFqdns: [
-              'windowsupdate.microsoft.com'
-              'update.microsoft.com'
-              'download.windowsupdate.com'
-              'download.microsoft.com'
-            ]
+            name: 'WindowsUpdate'
             protocols: [
               {
-                protocolType: 'Http'
-              }
-              {
                 protocolType: 'Https'
+                port: 443
               }
             ]
+            fqdnTags: [
+              'WindowsUpdate'
+            ]
+            terminateTLS: false
+            sourceAddresses: addsSubnetAddresses
+            destinationAddresses: []
+            sourceIpGroups: []
           }
           {
-            name: 'AllowDCToAzureAuth'
+            name: 'DCs to Azure Auth'
             ruleType: 'ApplicationRule'
             sourceAddresses: addsSubnetAddresses
             targetFqdns: [
@@ -674,7 +672,7 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
             ]
           }
           {
-            name: 'AllowDCToGithub'
+            name: 'DC to Github'
             ruleType: 'ApplicationRule'
             sourceAddresses: addsSubnetAddresses
             targetFqdns: [
@@ -690,13 +688,29 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
               }
             ]
           }
+          {
+            name: 'DC to PowerShell Gallery'
+            ruleType: 'ApplicationRule'
+            sourceAddresses: addsSubnetAddresses
+            targetFqdns: [
+              '*.powershellgallery.com'
+            ]
+            protocols: [
+              {
+                protocolType: 'Http'
+              }
+              {
+                protocolType: 'Https'
+              }
+            ]
+          }
         ]
       }
     ]
   }
   dependsOn: [
-    firewallPolicy_AVDCore_RCG
-    firewallPolicies_AVDOptional_RCG
+    ruleCollectionGroup_AVDCore
+    ruleCollectionGroup_AVDOptional
   ]
 }
 
@@ -727,9 +741,9 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
   tags: tagsByResourceType[?'Microsoft.Network/azureFirewalls'] ?? {}
   zones: empty(availabilityZones) ? null : availabilityZones
   dependsOn: [
-    firewallPolicy_AVDCore_RCG
-    firewallPolicies_AVDOptional_RCG
-    firewallPolicies_DomainControllers_RCG
+    ruleCollectionGroup_ADDSCore
+    ruleCollectionGroup_AVDCore
+    ruleCollectionGroup_AVDOptional
   ]
 }
 
