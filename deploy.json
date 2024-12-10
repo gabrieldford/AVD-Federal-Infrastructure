@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "32834557216933182"
+      "templateHash": "18299899507634059311"
     }
   },
   "parameters": {
@@ -2411,7 +2411,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "10515375989081656202"
+              "templateHash": "9428280712124138245"
             }
           },
           "parameters": {
@@ -2511,15 +2511,15 @@
           },
           "variables": {
             "networkInterfaceName": "nic",
-            "addcVMNameSuffix": "dc1",
+            "addcVMNameSuffix": "-dc1",
             "companyNamePrefix": "[split(parameters('adDomainName'), '.')[0]]",
             "adVMName": "[toUpper(format('{0}{1}', variables('companyNamePrefix'), variables('addcVMNameSuffix')))]",
-            "adDSCTemplate": "[format('{0}DSC/adDSC.zip', parameters('assetLocation'))]",
             "adDSCConfigurationFunction": "adDSCConfiguration.ps1\\DomainController",
             "imageOffer": "WindowsServer",
             "imagePublisher": "MicrosoftWindowsServer",
             "imageSKU": "2019-Datacenter",
-            "adNicName": "[format('{0}-{1}', variables('adVMName'), variables('networkInterfaceName'))]"
+            "adNicName": "[format('{0}-{1}', variables('adVMName'), variables('networkInterfaceName'))]",
+            "osDiskName": "[format('{0}-osdisk', variables('adVMName'))]"
           },
           "resources": [
             {
@@ -2544,7 +2544,7 @@
             },
             {
               "type": "Microsoft.Compute/virtualMachines",
-              "apiVersion": "2019-07-01",
+              "apiVersion": "2021-11-01",
               "name": "[variables('adVMName')]",
               "location": "[parameters('location')]",
               "properties": {
@@ -2554,7 +2554,11 @@
                 "osProfile": {
                   "computerName": "[variables('adVMName')]",
                   "adminUsername": "[parameters('adminUsername')]",
-                  "adminPassword": "[parameters('adminPassword')]"
+                  "adminPassword": "[parameters('adminPassword')]",
+                  "windowsConfiguration": {
+                    "provisionVMAgent": true,
+                    "enableAutomaticUpdates": true
+                  }
                 },
                 "storageProfile": {
                   "imageReference": {
@@ -2564,16 +2568,27 @@
                     "version": "latest"
                   },
                   "osDisk": {
+                    "name": "[variables('osDiskName')]",
                     "caching": "ReadWrite",
-                    "createOption": "FromImage"
+                    "createOption": "FromImage",
+                    "deleteOption": "Delete"
                   }
                 },
                 "networkProfile": {
                   "networkInterfaces": [
                     {
-                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]",
+                      "properties": {
+                        "deleteOption": "Delete"
+                      }
                     }
                   ]
+                },
+                "securityProfile": {
+                  "uefiSettings": {
+                    "secureBootEnabled": true,
+                    "vTpmEnabled": true
+                  }
                 }
               },
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Compute/virtualMachines'), createObject())]",
@@ -2593,7 +2608,7 @@
                 "forceUpdateTag": "1.02",
                 "autoUpgradeMinorVersion": true,
                 "settings": {
-                  "modulesUrl": "[variables('adDSCTemplate')]",
+                  "modulesUrl": "[parameters('assetLocation')]",
                   "configurationFunction": "[variables('adDSCConfigurationFunction')]",
                   "properties": [
                     {

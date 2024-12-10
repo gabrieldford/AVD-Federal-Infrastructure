@@ -63,16 +63,16 @@ param subnetResourceId string
 param tagsByResourceType object
 
 var networkInterfaceName = 'nic'
-var addcVMNameSuffix = 'dc1'
+var addcVMNameSuffix = '-dc1'
 var companyNamePrefix = split(adDomainName, '.')[0]
 var adVMName = toUpper('${companyNamePrefix}${addcVMNameSuffix}')
-var adDSCTemplate = '${assetLocation}DSC/adDSC.zip'
 var adDSCConfigurationFunction = 'adDSCConfiguration.ps1\\DomainController'
 var imageOffer = 'WindowsServer'
 var imagePublisher = 'MicrosoftWindowsServer'
 var imageSKU = '2019-Datacenter'
 
 var adNicName = '${adVMName}-${networkInterfaceName}'
+var osDiskName = '${adVMName}-osdisk'
 
 resource adNic 'Microsoft.Network/networkInterfaces@2019-12-01' = {
   name: adNicName
@@ -93,10 +93,9 @@ resource adNic 'Microsoft.Network/networkInterfaces@2019-12-01' = {
   tags: tagsByResourceType[?'Microsoft.Network/networkInterfaces'] ?? {}
 }
 
-resource adVM 'Microsoft.Compute/virtualMachines@2019-07-01' = {
+resource adVM 'Microsoft.Compute/virtualMachines@2021-11-01' = {
   name: adVMName
   location: location
-
   properties: {
     hardwareProfile: {
       vmSize: vmSize
@@ -105,6 +104,10 @@ resource adVM 'Microsoft.Compute/virtualMachines@2019-07-01' = {
       computerName: adVMName
       adminUsername: adminUsername
       adminPassword: adminPassword
+      windowsConfiguration: {
+        provisionVMAgent: true
+        enableAutomaticUpdates: true
+      }
     }
     storageProfile: {
       imageReference: {
@@ -114,16 +117,24 @@ resource adVM 'Microsoft.Compute/virtualMachines@2019-07-01' = {
         version: 'latest'
       }
       osDisk: {
+        name: osDiskName
         caching: 'ReadWrite'
         createOption: 'FromImage'
+        deleteOption: 'Delete'
       }
     }
     networkProfile: {
       networkInterfaces: [
         {
           id: adNic.id
+          properties: {
+            deleteOption: 'Delete'
+          }
         }
       ]
+    }
+    securityProfile: {
+      uefiSettings: { secureBootEnabled: true, vTpmEnabled: true }
     }
   }
   tags: tagsByResourceType[?'Microsoft.Compute/virtualMachines'] ?? {}
@@ -140,7 +151,7 @@ resource adVMName_Microsoft_Powershell_DSC 'Microsoft.Compute/virtualMachines/ex
     forceUpdateTag: '1.02'
     autoUpgradeMinorVersion: true
     settings: {
-      modulesUrl: adDSCTemplate
+      modulesUrl: assetLocation
       configurationFunction: adDSCConfigurationFunction
       properties: [
         {
