@@ -34,6 +34,7 @@ var snets = map(subnets, snet => {
 })
 
 resource nsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
+  location: location
   name: nsgName
   properties: {
     securityRules: nsgSecurityRules
@@ -42,8 +43,8 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
 }
 
 resource routeTable 'Microsoft.Network/routeTables@2023-04-01' = {
-  name: routeTableName
   location: location
+  name: routeTableName
   properties: {
     routes: [
       {
@@ -85,7 +86,10 @@ module localVnetPeering 'virtual-network-peering.bicep' = {
     localVnetName: vnetName
     remoteVirtualNetworkId: hubVnetResourceId
     useRemoteGateways: false
-  }  
+  }
+  dependsOn: [
+    vnet
+  ] 
 }
 
 module remoteVnetPeering 'virtual-network-peering.bicep' = {

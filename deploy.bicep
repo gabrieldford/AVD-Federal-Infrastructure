@@ -401,19 +401,11 @@ module domainController 'domainController/deploy.bicep' = {
   ]
 }
 
-module privateDNSZoneNames 'networking/privateDnsZoneNames.bicep' = {
-  name: 'Private-Dns-Zone-Names-${deploymentSuffix}'
-  scope: subscription()
-  params: {
-    locations: locations
-  }
-}
-
 module privateDNSZones 'networking/privateDnsZones.bicep' = {
   name: 'Private-DNS-Zones-${deploymentSuffix}'
   scope: resourceGroup(resourceGroups[1])
   params: {
-    privateDnsZoneNames: privateDNSZoneNames.outputs.zoneNames
+    locations: locations
     tags: tagsByResourceType[?'Microsoft.Network/privateDnsZones'] ?? {}
     vnetId: hubNetworking.outputs.hubVnetResourceId
   }
