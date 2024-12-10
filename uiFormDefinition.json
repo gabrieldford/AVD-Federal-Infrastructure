@@ -64,12 +64,12 @@
 									"type": "Microsoft.Common.TextBox",
 									"label": "Entra Id tenant suffix",
 									"placeholder": "",
-									"defaultValue": "M365x########.onmicrosoft.com",
+									"defaultValue": "m365x########.onmicrosoft.com",
 									"toolTip": "replace the #s with the correct value",
 									"constraints": {
 										"required": true,
 										"regex": "^[a-z][a-z0-9-]{1,61}[a-z0-9]?(\\.[a-z][a-z0-9-]{1,61}[a-z0-9]?)?(\\.[a-z][a-z0-9-]{1,61}[a-z0-9]?)?$",
-										"validationMessage": "Only alphanumeric characters and hyphens are allowed, and the value must be a valid domain name."
+										"validationMessage": "Only lowercase alphanumeric characters and hyphens are allowed, and the value must be a valid domain name."
 									},
 									"visible": true
 								}
