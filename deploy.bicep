@@ -330,7 +330,7 @@ module hubNetworking 'networking/hubNetworking.bicep' = {
     firewallName: 'afw-${locations[location].abbreviation}'
     firewallPolicyName: 'afwp-${locations[location].abbreviation}'
     firewallPublicIpName: 'pip-afw-${locations[location].abbreviation}'
-    vnetName: 'vnet-hub--${locations[location].abbreviation}'
+    vnetName: 'vnet-hub-${locations[location].abbreviation}'
     bastionSubnetPrefix: bastionSubnetPrefix
     firewallSubnetPrefix: firewallSubnetPrefix
     gatewaySubnetPrefix: gatewaySubnetPrefix

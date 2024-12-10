@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "6540730214794060626"
+      "templateHash": "14353615632157412502"
     }
   },
   "parameters": {
@@ -683,7 +683,7 @@
             "value": "[format('pip-afw-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
           "vnetName": {
-            "value": "[format('vnet-hub--{0}', variables('locations')[parameters('location')].abbreviation)]"
+            "value": "[format('vnet-hub-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
           "bastionSubnetPrefix": {
             "value": "[variables('bastionSubnetPrefix')]"
