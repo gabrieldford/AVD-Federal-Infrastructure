@@ -1,19 +1,14 @@
-@description('This is the location in which all the linked templates are stored.')
 param assetLocation string
-
-@description('Username to set for the local User. Cannot be "Administrator", "root" and possibly other such common account names. ')
 param adminUsername string
-
-@description('Password for the local administrator account. Cannot be "P@ssw0rd" and possibly other such common passwords. Must be 8 characters long and three of the following complexity requirements: uppercase, lowercase, number, special character')
 @secure()
 param adminPassword string
-
-@description('IMPORTANT: Two-part internal AD name - short/NB name will be first part (\'contoso\'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur.')
 param adDomainName string
-
+@secure()
+param defaultUserPassword string
+param entraIdPrimaryOrCustomDomainName string
 param location string = resourceGroup().location
-
-@description('JSON object array of users that will be loaded into AD once the domain is established.')
+param subnetResourceId string
+param tagsByResourceType object
 param usersArray array = [
   {
     FName: 'Bob'
@@ -46,21 +41,8 @@ param usersArray array = [
     SAM: 'jwilliams'
   }
 ]
-
-@description('This needs to be specified in order to have a uniform logon experience within AVD')
-param entraIdPrimaryOrCustomDomainName string
-
-@description('Enter the password that will be applied to each user account to be created in AD.')
-@secure()
-param defaultUserPassword string
-
-@description('Select a VM SKU (please ensure the SKU is available in your selected region).')
 param vmSize string
 
-@description('The subnet Resource Id to which the Domain Controller will be attached.')
-param subnetResourceId string
-
-param tagsByResourceType object
 
 var networkInterfaceName = 'nic'
 var addcVMNameSuffix = '-dc1'
@@ -69,15 +51,16 @@ var adVMName = toUpper('${companyNamePrefix}${addcVMNameSuffix}')
 var adDSCConfigurationFunction = 'adDSCConfiguration.ps1\\DomainController'
 var imageOffer = 'WindowsServer'
 var imagePublisher = 'MicrosoftWindowsServer'
-var imageSKU = '2019-Datacenter'
+var imageSKU = '2022-datacenter-azure-edition'
 
 var adNicName = '${adVMName}-${networkInterfaceName}'
 var osDiskName = '${adVMName}-osdisk'
 
-resource adNic 'Microsoft.Network/networkInterfaces@2019-12-01' = {
+resource adNic 'Microsoft.Network/networkInterfaces@2022-11-01' = {
   name: adNicName
   location: location
   properties: {
+    enableAcceleratedNetworking: true
     ipConfigurations: [
       {
         name: 'ipconfig1'
@@ -93,13 +76,22 @@ resource adNic 'Microsoft.Network/networkInterfaces@2019-12-01' = {
   tags: tagsByResourceType[?'Microsoft.Network/networkInterfaces'] ?? {}
 }
 
-resource adVM 'Microsoft.Compute/virtualMachines@2021-11-01' = {
+resource adVM 'Microsoft.Compute/virtualMachines@2024-03-01' = {
   name: adVMName
   location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
+    diagnosticsProfile: {
+      bootDiagnostics: {
+        enabled: true
+      }
+    }
     hardwareProfile: {
       vmSize: vmSize
     }
+    licenseType: 'Windows_Server'
     osProfile: {
       computerName: adVMName
       adminUsername: adminUsername
@@ -134,7 +126,11 @@ resource adVM 'Microsoft.Compute/virtualMachines@2021-11-01' = {
       ]
     }
     securityProfile: {
-      uefiSettings: { secureBootEnabled: true, vTpmEnabled: true }
+      securityType: 'TrustedLaunch'
+      uefiSettings: {
+        secureBootEnabled: true
+        vTpmEnabled: true
+      }
     }
   }
   tags: tagsByResourceType[?'Microsoft.Compute/virtualMachines'] ?? {}

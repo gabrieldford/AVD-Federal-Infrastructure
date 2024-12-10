@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "18299899507634059311"
+      "templateHash": "15200658573663074801"
     }
   },
   "parameters": {
@@ -682,6 +682,9 @@
           "firewallPublicIpName": {
             "value": "[format('pip-afw-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
+          "location": {
+            "value": "[parameters('location')]"
+          },
           "vnetName": {
             "value": "[format('vnet-hub-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
@@ -708,101 +711,54 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "17600326756165637909"
+              "templateHash": "14859779172962945558"
             }
           },
           "parameters": {
             "addsSubnetAddresses": {
-              "type": "array",
-              "metadata": {
-                "description": "The address prefixes of the Domain Controller subnet/vnet."
-              }
+              "type": "array"
             },
             "avdSubnetAddresses": {
-              "type": "array",
-              "metadata": {
-                "description": "The address Prefixes of the AVD Session Hosts."
-              }
+              "type": "array"
             },
             "availabilityZones": {
-              "type": "array",
-              "metadata": {
-                "description": "The availability zones available for the resources."
-              }
+              "type": "array"
             },
             "dnsServers": {
-              "type": "array",
-              "defaultValue": [],
-              "metadata": {
-                "description": "The DNS servers to use for the virtual network."
-              }
+              "type": "array"
             },
             "vnetAddressPrefix": {
-              "type": "string",
-              "metadata": {
-                "description": "The address prefix for the virtual network."
-              }
+              "type": "string"
             },
             "firewallPolicyName": {
-              "type": "string",
-              "metadata": {
-                "description": "The name of the Azure Firewall policy."
-              }
+              "type": "string"
             },
             "firewallSubnetPrefix": {
-              "type": "string",
-              "metadata": {
-                "description": "The address prefix for the Azure Firewall subnet."
-              }
+              "type": "string"
             },
             "bastionSubnetPrefix": {
-              "type": "string",
-              "metadata": {
-                "description": "The address prefix for the Azure Bastion subnet."
-              }
+              "type": "string"
             },
             "gatewaySubnetPrefix": {
-              "type": "string",
-              "metadata": {
-                "description": "The address prefix for the ExpressRoute Gateway subnet."
-              }
+              "type": "string"
             },
             "vnetName": {
-              "type": "string",
-              "metadata": {
-                "description": "The name of the virtual network."
-              }
+              "type": "string"
             },
             "firewallName": {
-              "type": "string",
-              "metadata": {
-                "description": "The name of the Azure Firewall."
-              }
+              "type": "string"
             },
             "firewallPublicIpName": {
-              "type": "string",
-              "metadata": {
-                "description": "The name of the public IP for the Azure Firewall."
-              }
+              "type": "string"
             },
             "bastionName": {
-              "type": "string",
-              "metadata": {
-                "description": "The name of the Azure Bastion."
-              }
+              "type": "string"
             },
             "bastionPublicIpName": {
-              "type": "string",
-              "metadata": {
-                "description": "The name of the public IP for the Azure Bastion."
-              }
+              "type": "string"
             },
             "location": {
-              "type": "string",
-              "defaultValue": "[resourceGroup().location]",
-              "metadata": {
-                "description": "The location of the resources."
-              }
+              "type": "string"
             },
             "tagsByResourceType": {
               "type": "object"
@@ -1596,6 +1552,9 @@
           "hubVnetResourceId": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
           },
+          "location": {
+            "value": "[parameters('location')]"
+          },
           "nsgName": {
             "value": "[format('nsg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
@@ -1724,7 +1683,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "8666825302702175676"
+              "templateHash": "7755006783709062705"
             }
           },
           "parameters": {
@@ -1741,8 +1700,7 @@
               "type": "string"
             },
             "location": {
-              "type": "string",
-              "defaultValue": "[resourceGroup().location]"
+              "type": "string"
             },
             "hubVnetResourceId": {
               "type": "string"
@@ -2040,6 +1998,9 @@
           "hubVnetResourceId": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
           },
+          "location": {
+            "value": "[parameters('location')]"
+          },
           "nsgName": {
             "value": "[format('nsg-avd-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
@@ -2069,7 +2030,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "8666825302702175676"
+              "templateHash": "7755006783709062705"
             }
           },
           "parameters": {
@@ -2086,8 +2047,7 @@
               "type": "string"
             },
             "location": {
-              "type": "string",
-              "defaultValue": "[resourceGroup().location]"
+              "type": "string"
             },
             "hubVnetResourceId": {
               "type": "string"
@@ -2394,6 +2354,9 @@
           "entraIdPrimaryOrCustomDomainName": {
             "value": "[parameters('entraIdPrimaryOrCustomDomainName')]"
           },
+          "location": {
+            "value": "[parameters('location')]"
+          },
           "subnetResourceId": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.subnetResourceIds.value[0]]"
           },
@@ -2411,37 +2374,37 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "9428280712124138245"
+              "templateHash": "11310489065396090144"
             }
           },
           "parameters": {
             "assetLocation": {
-              "type": "string",
-              "metadata": {
-                "description": "This is the location in which all the linked templates are stored."
-              }
+              "type": "string"
             },
             "adminUsername": {
-              "type": "string",
-              "metadata": {
-                "description": "Username to set for the local User. Cannot be \"Administrator\", \"root\" and possibly other such common account names. "
-              }
+              "type": "string"
             },
             "adminPassword": {
-              "type": "securestring",
-              "metadata": {
-                "description": "Password for the local administrator account. Cannot be \"P@ssw0rd\" and possibly other such common passwords. Must be 8 characters long and three of the following complexity requirements: uppercase, lowercase, number, special character"
-              }
+              "type": "securestring"
             },
             "adDomainName": {
-              "type": "string",
-              "metadata": {
-                "description": "IMPORTANT: Two-part internal AD name - short/NB name will be first part ('contoso'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur."
-              }
+              "type": "string"
+            },
+            "defaultUserPassword": {
+              "type": "securestring"
+            },
+            "entraIdPrimaryOrCustomDomainName": {
+              "type": "string"
             },
             "location": {
               "type": "string",
               "defaultValue": "[resourceGroup().location]"
+            },
+            "subnetResourceId": {
+              "type": "string"
+            },
+            "tagsByResourceType": {
+              "type": "object"
             },
             "usersArray": {
               "type": "array",
@@ -2476,37 +2439,10 @@
                   "LName": "Williams",
                   "SAM": "jwilliams"
                 }
-              ],
-              "metadata": {
-                "description": "JSON object array of users that will be loaded into AD once the domain is established."
-              }
-            },
-            "entraIdPrimaryOrCustomDomainName": {
-              "type": "string",
-              "metadata": {
-                "description": "This needs to be specified in order to have a uniform logon experience within AVD"
-              }
-            },
-            "defaultUserPassword": {
-              "type": "securestring",
-              "metadata": {
-                "description": "Enter the password that will be applied to each user account to be created in AD."
-              }
+              ]
             },
             "vmSize": {
-              "type": "string",
-              "metadata": {
-                "description": "Select a VM SKU (please ensure the SKU is available in your selected region)."
-              }
-            },
-            "subnetResourceId": {
-              "type": "string",
-              "metadata": {
-                "description": "The subnet Resource Id to which the Domain Controller will be attached."
-              }
-            },
-            "tagsByResourceType": {
-              "type": "object"
+              "type": "string"
             }
           },
           "variables": {
@@ -2517,17 +2453,18 @@
             "adDSCConfigurationFunction": "adDSCConfiguration.ps1\\DomainController",
             "imageOffer": "WindowsServer",
             "imagePublisher": "MicrosoftWindowsServer",
-            "imageSKU": "2019-Datacenter",
+            "imageSKU": "2022-datacenter-azure-edition",
             "adNicName": "[format('{0}-{1}', variables('adVMName'), variables('networkInterfaceName'))]",
             "osDiskName": "[format('{0}-osdisk', variables('adVMName'))]"
           },
           "resources": [
             {
               "type": "Microsoft.Network/networkInterfaces",
-              "apiVersion": "2019-12-01",
+              "apiVersion": "2022-11-01",
               "name": "[variables('adNicName')]",
               "location": "[parameters('location')]",
               "properties": {
+                "enableAcceleratedNetworking": true,
                 "ipConfigurations": [
                   {
                     "name": "ipconfig1",
@@ -2544,13 +2481,22 @@
             },
             {
               "type": "Microsoft.Compute/virtualMachines",
-              "apiVersion": "2021-11-01",
+              "apiVersion": "2024-03-01",
               "name": "[variables('adVMName')]",
               "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
               "properties": {
+                "diagnosticsProfile": {
+                  "bootDiagnostics": {
+                    "enabled": true
+                  }
+                },
                 "hardwareProfile": {
                   "vmSize": "[parameters('vmSize')]"
                 },
+                "licenseType": "Windows_Server",
                 "osProfile": {
                   "computerName": "[variables('adVMName')]",
                   "adminUsername": "[parameters('adminUsername')]",
@@ -2585,6 +2531,7 @@
                   ]
                 },
                 "securityProfile": {
+                  "securityType": "TrustedLaunch",
                   "uefiSettings": {
                     "secureBootEnabled": true,
                     "vTpmEnabled": true

@@ -1,48 +1,18 @@
-@description('The address prefixes of the Domain Controller subnet/vnet.')
 param addsSubnetAddresses array
-
-@description('The address Prefixes of the AVD Session Hosts.')
 param avdSubnetAddresses array
-
-@description('The availability zones available for the resources.')
 param availabilityZones array
-
-@description('The DNS servers to use for the virtual network.')
-param dnsServers array = []
-
-@description('The address prefix for the virtual network.')
+param dnsServers array
 param vnetAddressPrefix string
-
-@description('The name of the Azure Firewall policy.')
 param firewallPolicyName string
-
-@description('The address prefix for the Azure Firewall subnet.')
 param firewallSubnetPrefix string
-
-@description('The address prefix for the Azure Bastion subnet.')
 param bastionSubnetPrefix string
-
-@description('The address prefix for the ExpressRoute Gateway subnet.')
 param gatewaySubnetPrefix string
-
-@description('The name of the virtual network.')
 param vnetName string
-
-@description('The name of the Azure Firewall.')
 param firewallName string
-
-@description('The name of the public IP for the Azure Firewall.')
 param firewallPublicIpName string
-
-@description('The name of the Azure Bastion.')
 param bastionName string
-
-@description('The name of the public IP for the Azure Bastion.')
 param bastionPublicIpName string
-
-@description('The location of the resources.')
-param location string = resourceGroup().location
-
+param location string
 param tagsByResourceType object
 
 resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {

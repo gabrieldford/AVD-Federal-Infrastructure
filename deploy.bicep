@@ -329,6 +329,7 @@ module hubNetworking 'networking/hubNetworking.bicep' = {
     firewallName: 'afw-${locations[location].abbreviation}'
     firewallPolicyName: 'afwp-${locations[location].abbreviation}'
     firewallPublicIpName: 'pip-afw-${locations[location].abbreviation}'
+    location: location
     vnetName: 'vnet-hub-${locations[location].abbreviation}'
     bastionSubnetPrefix: bastionSubnetPrefix
     firewallSubnetPrefix: firewallSubnetPrefix
@@ -348,6 +349,7 @@ module addsNetworking 'networking/spokeNetworking.bicep' = {
     deploymentSuffix: deploymentSuffix
     fwIPAddress: hubNetworking.outputs.firewallIp
     hubVnetResourceId: hubNetworking.outputs.hubVnetResourceId
+    location: location
     nsgName: 'nsg-adds-${locations[location].abbreviation}'
     nsgSecurityRules: addsNsgRules
     routeTableName: 'rt-adds-${locations[location].abbreviation}'
@@ -368,6 +370,7 @@ module avdNetworking 'networking/spokeNetworking.bicep' = {
     deploymentSuffix: deploymentSuffix
     fwIPAddress: hubNetworking.outputs.firewallIp
     hubVnetResourceId: hubNetworking.outputs.hubVnetResourceId
+    location: location
     nsgName: 'nsg-avd-${locations[location].abbreviation}'
     nsgSecurityRules: avdNsgRules
     routeTableName: 'rt-avd-${locations[location].abbreviation}'
@@ -391,6 +394,7 @@ module domainController 'domainController/domainController.bicep' = {
     assetLocation: assetLocation
     defaultUserPassword: defaultUserPassword
     entraIdPrimaryOrCustomDomainName: entraIdPrimaryOrCustomDomainName
+    location: location
     subnetResourceId: addsNetworking.outputs.subnetResourceIds[0]
     tagsByResourceType: tagsByResourceType
     vmSize: vmSize
