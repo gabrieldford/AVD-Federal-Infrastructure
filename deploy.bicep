@@ -298,7 +298,7 @@ var firewallSubnetPrefix = '10.0.0.64/26'
 
 var gatewaySubnetPrefix = '10.0.0.128/27'
 
-var deploymentSuffix = uniqueString(subscription().id, location)
+var deploymentSuffix = substring(deployment().name, length(deployment().name) - 14, 12)
 
 var locations = (loadJsonContent('data/locations.json'))[environment().name]
 
@@ -381,7 +381,7 @@ module avdNetworking 'networking/spokeNetworking.bicep' = {
   ]
 }
 
-module domainController 'domainController/deploy.bicep' = {
+module domainController 'domainController/domainController.bicep' = {
   name: 'adds-servers-${deploymentSuffix}'
   scope: resourceGroup(resourceGroups[2])
   params: {

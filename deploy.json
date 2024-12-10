@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "14143333134560914399"
+      "templateHash": "32834557216933182"
     }
   },
   "parameters": {
@@ -619,7 +619,7 @@
     "bastionSubnetPrefix": "10.0.0.0/26",
     "firewallSubnetPrefix": "10.0.0.64/26",
     "gatewaySubnetPrefix": "10.0.0.128/27",
-    "deploymentSuffix": "[uniqueString(subscription().id, parameters('location'))]",
+    "deploymentSuffix": "[substring(deployment().name, sub(length(deployment().name), 14), 12)]",
     "locations": "[variables('$fxv#0')[environment().name]]",
     "resourceGroups": [
       "[format('rg-hub-networking-{0}', variables('locations')[parameters('location')].abbreviation)]",
