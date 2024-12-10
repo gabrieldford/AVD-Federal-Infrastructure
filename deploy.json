@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "15149611571996218980"
+      "templateHash": "16354878401677180285"
     }
   },
   "parameters": {
@@ -708,7 +708,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "6511898092587972964"
+              "templateHash": "12247286962701292799"
             }
           },
           "parameters": {
@@ -1122,9 +1122,6 @@
                           "UDP"
                         ],
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "sourceIpGroups": [],
-                        "destinationAddresses": [],
-                        "destinationIpGroups": [],
                         "destinationFqdns": [
                           "time.windows.com"
                         ],
@@ -1139,11 +1136,8 @@
                           "TCP"
                         ],
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "sourceIpGroups": [],
-                        "destinationAddresses": [],
-                        "destinationIpGroups": [],
                         "destinationFqdns": [
-                          "[environment().authentication.loginEndpoint]"
+                          "[replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')]"
                         ],
                         "destinationPorts": [
                           "443"
@@ -1156,9 +1150,6 @@
                           "TCP"
                         ],
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "sourceIpGroups": [],
-                        "destinationAddresses": [],
-                        "destinationIpGroups": [],
                         "destinationFqdns": [
                           "www.msftconnecttest.com"
                         ],
@@ -1173,12 +1164,9 @@
                           "UDP"
                         ],
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "sourceIpGroups": [],
                         "destinationAddresses": [
                           "*"
                         ],
-                        "destinationIpGroups": [],
-                        "destinationFqdns": [],
                         "destinationPorts": [
                           "49152-65535"
                         ]
@@ -1190,12 +1178,9 @@
                           "UDP"
                         ],
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "sourceIpGroups": [],
                         "destinationAddresses": [
                           "20.202.0.0/16"
                         ],
-                        "destinationIpGroups": [],
-                        "destinationFqdns": [],
                         "destinationPorts": [
                           "3478"
                         ]
@@ -1207,12 +1192,9 @@
                           "TCP"
                         ],
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "sourceIpGroups": [],
                         "destinationAddresses": [
                           "20.202.0.0/16"
                         ],
-                        "destinationIpGroups": [],
-                        "destinationFqdns": [],
                         "destinationPorts": [
                           "443"
                         ]
@@ -1236,8 +1218,6 @@
                             "port": 443
                           }
                         ],
-                        "fqdnTags": [],
-                        "webCategories": [],
                         "targetFqdns": [
                           "*.events.data.microsoft.com"
                         ],
@@ -1259,9 +1239,6 @@
                         "fqdnTags": [
                           "WindowsUpdate"
                         ],
-                        "webCategories": [],
-                        "targetFqdns": [],
-                        "targetUrls": [],
                         "terminateTLS": false,
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
                         "destinationAddresses": [],
@@ -1276,12 +1253,9 @@
                             "port": 443
                           }
                         ],
-                        "fqdnTags": [],
-                        "webCategories": [],
                         "targetFqdns": [
                           "*.sfx.ms"
                         ],
-                        "targetUrls": [],
                         "terminateTLS": false,
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
                         "destinationAddresses": [],
@@ -1292,16 +1266,17 @@
                         "name": "DigicertCRL",
                         "protocols": [
                           {
+                            "protocolType": "Http",
+                            "port": 80
+                          },
+                          {
                             "protocolType": "Https",
                             "port": 443
                           }
                         ],
-                        "fqdnTags": [],
-                        "webCategories": [],
                         "targetFqdns": [
                           "*.digicert.com"
                         ],
-                        "targetUrls": [],
                         "terminateTLS": false,
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
                         "destinationAddresses": [],
@@ -1309,43 +1284,19 @@
                       },
                       {
                         "ruleType": "ApplicationRule",
-                        "name": "AzureDNSresolution1",
+                        "name": "AzureDNSresolution",
                         "protocols": [
                           {
                             "protocolType": "Https",
                             "port": 443
                           }
                         ],
-                        "fqdnTags": [],
-                        "webCategories": [],
                         "targetFqdns": [
-                          "*.azure-dns.com"
-                        ],
-                        "targetUrls": [],
-                        "terminateTLS": false,
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "destinationAddresses": [],
-                        "sourceIpGroups": []
-                      },
-                      {
-                        "ruleType": "ApplicationRule",
-                        "name": "AzureDNSresolution2",
-                        "protocols": [
-                          {
-                            "protocolType": "Https",
-                            "port": 443
-                          }
-                        ],
-                        "fqdnTags": [],
-                        "webCategories": [],
-                        "targetFqdns": [
+                          "*.azure-dns.com",
                           "*.azure-dns.net"
                         ],
-                        "targetUrls": [],
                         "terminateTLS": false,
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "destinationAddresses": [],
-                        "sourceIpGroups": []
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]"
                       },
                       {
                         "ruleType": "ApplicationRule",

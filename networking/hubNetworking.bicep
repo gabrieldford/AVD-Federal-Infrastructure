@@ -350,9 +350,6 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
               'UDP'
             ]
             sourceAddresses: avdSubnetAddresses
-            sourceIpGroups: []
-            destinationAddresses: []
-            destinationIpGroups: []
             destinationFqdns: [
               'time.windows.com'
             ]
@@ -367,11 +364,8 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
               'TCP'
             ]
             sourceAddresses: avdSubnetAddresses
-            sourceIpGroups: []
-            destinationAddresses: []
-            destinationIpGroups: []
             destinationFqdns: [
-              environment().authentication.loginEndpoint
+              replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')
             ]
             destinationPorts: [
               '443'
@@ -384,9 +378,6 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
               'TCP'
             ]
             sourceAddresses: avdSubnetAddresses
-            sourceIpGroups: []
-            destinationAddresses: []
-            destinationIpGroups: []
             destinationFqdns: [
               'www.msftconnecttest.com'
             ]
@@ -401,12 +392,9 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
               'UDP'
             ]
             sourceAddresses: avdSubnetAddresses
-            sourceIpGroups: []
             destinationAddresses: [
               '*'
             ]
-            destinationIpGroups: []
-            destinationFqdns: []
             destinationPorts: [
               '49152-65535'
             ]
@@ -418,12 +406,9 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
               'UDP'
             ]
             sourceAddresses: avdSubnetAddresses
-            sourceIpGroups: []
             destinationAddresses: [
               '20.202.0.0/16'
             ]
-            destinationIpGroups: []
-            destinationFqdns: []
             destinationPorts: [
               '3478'
             ]
@@ -435,12 +420,9 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
               'TCP'
             ]
             sourceAddresses: avdSubnetAddresses
-            sourceIpGroups: []
             destinationAddresses: [
               '20.202.0.0/16'
             ]
-            destinationIpGroups: []
-            destinationFqdns: []
             destinationPorts: [
               '443'
             ]
@@ -464,8 +446,6 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
                 port: 443
               }
             ]
-            fqdnTags: []
-            webCategories: []
             targetFqdns: [
               '*.events.data.microsoft.com'
             ]
@@ -487,9 +467,6 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
             fqdnTags: [
               'WindowsUpdate'
             ]
-            webCategories: []
-            targetFqdns: []
-            targetUrls: []
             terminateTLS: false
             sourceAddresses: avdSubnetAddresses
             destinationAddresses: []
@@ -504,12 +481,9 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
                 port: 443
               }
             ]
-            fqdnTags: []
-            webCategories: []
             targetFqdns: [
               '*.sfx.ms'
             ]
-            targetUrls: []
             terminateTLS: false
             sourceAddresses: avdSubnetAddresses
             destinationAddresses: []
@@ -520,16 +494,17 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
             name: 'DigicertCRL'
             protocols: [
               {
+                protocolType: 'Http'
+                port: 80
+              }
+              {
                 protocolType: 'Https'
                 port: 443
               }
             ]
-            fqdnTags: []
-            webCategories: []
             targetFqdns: [
               '*.digicert.com'
             ]
-            targetUrls: []
             terminateTLS: false
             sourceAddresses: avdSubnetAddresses
             destinationAddresses: []
@@ -537,43 +512,19 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
           }
           {
             ruleType: 'ApplicationRule'
-            name: 'AzureDNSresolution1'
+            name: 'AzureDNSresolution'
             protocols: [
               {
                 protocolType: 'Https'
                 port: 443
               }
             ]
-            fqdnTags: []
-            webCategories: []
             targetFqdns: [
               '*.azure-dns.com'
-            ]
-            targetUrls: []
-            terminateTLS: false
-            sourceAddresses: avdSubnetAddresses
-            destinationAddresses: []
-            sourceIpGroups: []
-          }
-          {
-            ruleType: 'ApplicationRule'
-            name: 'AzureDNSresolution2'
-            protocols: [
-              {
-                protocolType: 'Https'
-                port: 443
-              }
-            ]
-            fqdnTags: []
-            webCategories: []
-            targetFqdns: [
               '*.azure-dns.net'
             ]
-            targetUrls: []
             terminateTLS: false
             sourceAddresses: avdSubnetAddresses
-            destinationAddresses: []
-            sourceIpGroups: []
           }
           {
             ruleType: 'ApplicationRule'
