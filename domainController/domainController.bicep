@@ -60,7 +60,7 @@ resource adNic 'Microsoft.Network/networkInterfaces@2022-11-01' = {
   name: adNicName
   location: location
   properties: {
-    enableAcceleratedNetworking: true
+    enableAcceleratedNetworking: false
     ipConfigurations: [
       {
         name: 'ipconfig1'
