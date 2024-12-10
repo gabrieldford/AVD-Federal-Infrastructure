@@ -171,7 +171,7 @@
 					"label": "Tags",
 					"elements": [
 						{
-							"name": "tags",
+							"name": "tagsByResource",
 							"type": "Microsoft.Common.TagsByResource",
 							"resources": [
 								"Microsoft.Network/azureFirewalls",
@@ -209,7 +209,8 @@
 				"adDomainName": "[steps('basics').domainAndTenant.adDomainName]",
 				"entraIdPrimaryOrCustomDomainName": "[steps('basics').domainAndTenant.customUpnSuffix]",
 				"vmSize": "[steps('basics').vm.vmSize]",
-				"availabilityZones": "[first(map(first(map(filter(steps('tags').resourceSkusApi.value, (sku) => equals(sku.name, steps('basics').vm.vmSize)), (sku) => sku.locationInfo)), (sku) => sku.zones))]"				
+				"availabilityZones": "[first(map(first(map(filter(steps('tags').resourceSkusApi.value, (sku) => equals(sku.name, steps('basics').vm.vmSize)), (sku) => sku.locationInfo)), (sku) => sku.zones))]",				
+				"tagsByResourceType": "[steps('tags').tagsByResource]"
 			}
 		}
 	}
