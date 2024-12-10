@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "6684599722263427998"
+      "templateHash": "6153699497437051891"
     }
   },
   "parameters": {
@@ -708,7 +708,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "442140033644134833"
+              "templateHash": "3333241289298018652"
             }
           },
           "parameters": {
@@ -1402,7 +1402,7 @@
                     ]
                   },
                   {
-                    "name": "AllowDCToInternet",
+                    "name": "ApplicationRules_DCsToInternet",
                     "action": {
                       "type": "Allow"
                     },
@@ -1431,7 +1431,6 @@
                         "ruleType": "ApplicationRule",
                         "sourceAddresses": "[parameters('addsSubnetAddresses')]",
                         "targetFqdns": [
-                          "[replace(replace(environment().resourceManager, 'https://', ''), '/', '')]",
                           "[replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')]",
                           "[replace(replace(environment().authentication.audiences[0], 'https://', ''), '/', '')]",
                           "[replace(replace(environment().authentication.audiences[1], 'https://', ''), '/', '')]",

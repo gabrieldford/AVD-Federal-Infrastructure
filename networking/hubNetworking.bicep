@@ -627,7 +627,7 @@ resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCo
         ]
       }
       {
-        name: 'AllowDCToInternet'
+        name: 'ApplicationRules_DCsToInternet'
         action: {
           type: 'Allow'
         }
@@ -656,7 +656,6 @@ resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCo
             ruleType: 'ApplicationRule'
             sourceAddresses: addsSubnetAddresses
             targetFqdns: [
-              replace(replace(environment().resourceManager, 'https://', ''), '/', '')
               replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')
               replace(replace(environment().authentication.audiences[0], 'https://', ''), '/', '')
               replace(replace(environment().authentication.audiences[1], 'https://', ''), '/', '')
