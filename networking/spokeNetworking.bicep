@@ -95,4 +95,5 @@ module remoteVnetPeering 'virtual-network-peering.bicep' = {
   }
 }
 
+output vnetResourceId string = vnet.id
 output subnetResourceIds array = [for snet in snets: '${vnet.id}/subnets/${snet.name}']

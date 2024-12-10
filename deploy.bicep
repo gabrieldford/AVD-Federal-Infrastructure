@@ -134,6 +134,20 @@ var addsNsgRules = [
         bastionSubnetPrefix
       ]
     }
+  }
+  {
+    name: 'DenyAllCustomInbound'
+    properties: {
+      priority: 4000
+      access: 'Deny'
+      description: 'Deny all inbound traffic not explicitly allowed'
+      destinationAddressPrefix: addsVnetAddressPrefix
+      direction: 'Inbound'
+      sourcePortRange: '*'
+      destinationPortRange: '*'
+      protocol: '*'
+      sourceAddressPrefix: '*'
+    }
   }  
 ]
 var addsSubnets = [
@@ -307,7 +321,6 @@ var resourceGroups = [
   'rg-privateDnsZones'
   'rg-adds-${locations[location].abbreviation}'
   'rg-avd-networking-${locations[location].abbreviation}'
-
 ]
 
 resource rgs 'Microsoft.Resources/resourceGroups@2024-03-01' = [for rg in resourceGroups: {
@@ -410,7 +423,7 @@ module privateDNSZones 'networking/privateDnsZones.bicep' = {
   params: {
     recoveryServicesGeo: locations[location].recoveryServicesGeo
     tags: tagsByResourceType[?'Microsoft.Network/privateDnsZones'] ?? {}
-    vnetId: hubNetworking.outputs.hubVnetResourceId
+    vnetId: addsNetworking.outputs.vnetResourceId
   }
   dependsOn: [
     rgs

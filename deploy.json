@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "9478961715971184935"
+      "templateHash": "7395367058011176652"
     }
   },
   "parameters": {
@@ -1657,6 +1657,20 @@
                     "[variables('bastionSubnetPrefix')]"
                   ]
                 }
+              },
+              {
+                "name": "DenyAllCustomInbound",
+                "properties": {
+                  "priority": 4000,
+                  "access": "Deny",
+                  "description": "Deny all inbound traffic not explicitly allowed",
+                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+                  "direction": "Inbound",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "*",
+                  "protocol": "*",
+                  "sourceAddressPrefix": "*"
+                }
               }
             ]
           },
@@ -1683,7 +1697,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "7755006783709062705"
+              "templateHash": "5202971072728056556"
             }
           },
           "parameters": {
@@ -1963,6 +1977,10 @@
             }
           ],
           "outputs": {
+            "vnetResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            },
             "subnetResourceIds": {
               "type": "array",
               "copy": {
@@ -2030,7 +2048,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "7755006783709062705"
+              "templateHash": "5202971072728056556"
             }
           },
           "parameters": {
@@ -2310,6 +2328,10 @@
             }
           ],
           "outputs": {
+            "vnetResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            },
             "subnetResourceIds": {
               "type": "array",
               "copy": {
@@ -2628,7 +2650,7 @@
             "value": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/privateDnsZones'), createObject())]"
           },
           "vnetId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.vnetResourceId.value]"
           }
         },
         "template": {
@@ -2737,7 +2759,7 @@
         }
       },
       "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix')))]",
         "rgs"
       ]
     }
