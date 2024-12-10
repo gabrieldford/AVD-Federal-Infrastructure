@@ -61,6 +61,7 @@ resource routeTable 'Microsoft.Network/routeTables@2023-04-01' = {
 }
 
 resource vnet 'Microsoft.Network/virtualNetworks@2024-03-01' = {
+  location: location
   name: vnetName
   properties: {
     addressSpace: {

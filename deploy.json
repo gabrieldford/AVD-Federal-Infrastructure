@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "12197133716397433095"
+      "templateHash": "6483840223245100036"
     }
   },
   "parameters": {
@@ -1724,7 +1724,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "1871812100564373401"
+              "templateHash": "8666825302702175676"
             }
           },
           "parameters": {
@@ -1800,6 +1800,7 @@
               "type": "Microsoft.Network/virtualNetworks",
               "apiVersion": "2024-03-01",
               "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
               "properties": {
                 "addressSpace": {
                   "addressPrefixes": [
@@ -2068,7 +2069,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "1871812100564373401"
+              "templateHash": "8666825302702175676"
             }
           },
           "parameters": {
@@ -2144,6 +2145,7 @@
               "type": "Microsoft.Network/virtualNetworks",
               "apiVersion": "2024-03-01",
               "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
               "properties": {
                 "addressSpace": {
                   "addressPrefixes": [
