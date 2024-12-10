@@ -550,6 +550,9 @@ resource firewallPolicies_AVDOptional_RCG 'Microsoft.Network/firewallPolicies/ru
       }
     ]
   }
+  dependsOn: [
+    firewallPolicy_AVDCore_RCG
+  ]
 }
 
 resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
@@ -691,6 +694,10 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
       }
     ]
   }
+  dependsOn: [
+    firewallPolicy_AVDCore_RCG
+    firewallPolicies_AVDOptional_RCG
+  ]
 }
 
 resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
@@ -719,6 +726,11 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
   }
   tags: tagsByResourceType[?'Microsoft.Network/azureFirewalls'] ?? {}
   zones: empty(availabilityZones) ? null : availabilityZones
+  dependsOn: [
+    firewallPolicy_AVDCore_RCG
+    firewallPolicies_AVDOptional_RCG
+    firewallPolicies_DomainControllers_RCG
+  ]
 }
 
 resource azureBastion 'Microsoft.Network/bastionHosts@2023-02-01' = {

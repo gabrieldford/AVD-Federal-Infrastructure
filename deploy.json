@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "16354878401677180285"
+      "templateHash": "6540730214794060626"
     }
   },
   "parameters": {
@@ -708,7 +708,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "12247286962701292799"
+              "templateHash": "5003060057344377127"
             }
           },
           "parameters": {
@@ -1323,7 +1323,8 @@
                 ]
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]"
               ]
             },
             {
@@ -1469,7 +1470,9 @@
                 ]
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]",
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]"
               ]
             },
             {
@@ -1501,7 +1504,10 @@
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/azureFirewalls'), createObject())]",
               "zones": "[if(empty(parameters('availabilityZones')), null(), parameters('availabilityZones'))]",
               "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS_Core')]",
                 "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]",
                 "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]",
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
               ]
