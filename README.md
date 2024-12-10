@@ -1,20 +1,20 @@
-# Azure Active Directory Hybrid Lab
-
-## Creates an AD VM with Azure AD Connect installed
+# Azure Virtual Desktop Lab Landing Zone
 
 ## Quick Start
 
-[![Deploy to Azure Commercial](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2F%2FAAD-Hybrid-Lab%2Fdeploy.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2F%2FAAD-Hybrid-Lab%2FuiDefinition.json)
-[![Deploy to Azure Gov](https://aka.ms/deploytoazuregovbutton)](https://portal.azure.us/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2F%2FAAD-Hybrid-Lab%2Fdeploy.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2F%2FAAD-Hybrid-Lab%2FuiDefinition.json)
+[![Deploy to Azure Commercial](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2Fdeploy.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2FuiFormDefinition.json)
 
 ## Details
 
-* Requires a Virtual Network and Subnet
 * Deploys the following infrastructure:
+  * Hub Virtual Network with Azure Firewall, Firewall Policies for ADDS and AVD, Bastion, and associated subnets
+  * Private DNS Zones for all the private DNS zones required to support AVD.
+  * ADDS Spoke Virtual Network peered to Hub with Route Table to force default route through Firewall. Additionally deploys network security group to protect ADDS subnet.
   * VM with Active Directory Domain Services and DNS Role
   * DSC installs AD
     * Test users are created
     * Azure Active Directory Connect is installed and available to configure.
+  * AVD Spoke Virtual Network peered to Hub with Route Table to force default route through Firewall. Additionally deploys network security group to protect AVD session hosts.
 
 ## NOTICE/WARNING
 

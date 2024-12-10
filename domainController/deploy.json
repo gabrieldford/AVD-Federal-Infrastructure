@@ -4,42 +4,21 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.26.170.59819",
-      "templateHash": "7629357940004121248"
+      "version": "0.32.4.45862",
+      "templateHash": "14231610381493870957"
     }
   },
   "parameters": {
     "assetLocation": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/master/AAD-Hybrid-Lab/",
       "metadata": {
         "description": "This is the location in which all the linked templates are stored."
       }
     },
     "adminUsername": {
       "type": "string",
-      "defaultValue": "ADAdmin",
       "metadata": {
         "description": "Username to set for the local User. Cannot be \"Administrator\", \"root\" and possibly other such common account names. "
-      }
-    },
-    "deploymentNumber": {
-      "type": "string",
-      "defaultValue": "1",
-      "allowedValues": [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9"
-      ],
-      "metadata": {
-        "description": "When deploying the stack N times simultaneously, define the instance - this will be appended to some resource names to avoid collisions."
       }
     },
     "adminPassword": {
@@ -62,124 +41,34 @@
       "type": "array",
       "defaultValue": [
         {
-          "FName": "1Bob",
+          "FName": "Bob",
           "LName": "Jones",
-          "SAM": "1bjones"
+          "SAM": "bjones"
         },
         {
-          "FName": "1Bill",
+          "FName": "Bill",
           "LName": "Smith",
-          "SAM": "1bsmith"
+          "SAM": "bsmith"
         },
         {
-          "FName": "1Mary",
+          "FName": "Mary",
           "LName": "Phillips",
-          "SAM": "1mphillips"
+          "SAM": "mphillips"
         },
         {
-          "FName": "1Sue",
+          "FName": "Sue",
           "LName": "Jackson",
-          "SAM": "1sjackson"
+          "SAM": "sjackson"
         },
         {
-          "FName": "1Jack",
+          "FName": "Jack",
           "LName": "Petersen",
-          "SAM": "1jpetersen"
+          "SAM": "jpetersen"
         },
         {
-          "FName": "1Julia",
+          "FName": "Julia",
           "LName": "Williams",
-          "SAM": "1jwilliams"
-        },
-        {
-          "FName": "2Bob",
-          "LName": "Jones",
-          "SAM": "2bjones"
-        },
-        {
-          "FName": "2Bill",
-          "LName": "Smith",
-          "SAM": "2bsmith"
-        },
-        {
-          "FName": "2Mary",
-          "LName": "Phillips",
-          "SAM": "2mphillips"
-        },
-        {
-          "FName": "2Sue",
-          "LName": "Jackson",
-          "SAM": "2sjackson"
-        },
-        {
-          "FName": "2Jack",
-          "LName": "Petersen",
-          "SAM": "2jpetersen"
-        },
-        {
-          "FName": "2Julia",
-          "LName": "Williams",
-          "SAM": "2jwilliams"
-        },
-        {
-          "FName": "3Bob",
-          "LName": "Jones",
-          "SAM": "3bjones"
-        },
-        {
-          "FName": "3Bill",
-          "LName": "Smith",
-          "SAM": "3bsmith"
-        },
-        {
-          "FName": "3Mary",
-          "LName": "Phillips",
-          "SAM": "3mphillips"
-        },
-        {
-          "FName": "3Sue",
-          "LName": "Jackson",
-          "SAM": "3sjackson"
-        },
-        {
-          "FName": "3Jack",
-          "LName": "Petersen",
-          "SAM": "3jpetersen"
-        },
-        {
-          "FName": "3Julia",
-          "LName": "Williams",
-          "SAM": "3jwilliams"
-        },
-        {
-          "FName": "4Bob",
-          "LName": "Jones",
-          "SAM": "4bjones"
-        },
-        {
-          "FName": "4Bill",
-          "LName": "Smith",
-          "SAM": "4bsmith"
-        },
-        {
-          "FName": "4Mary",
-          "LName": "Phillips",
-          "SAM": "4mphillips"
-        },
-        {
-          "FName": "4Sue",
-          "LName": "Jackson",
-          "SAM": "4sjackson"
-        },
-        {
-          "FName": "4Jack",
-          "LName": "Petersen",
-          "SAM": "4jpetersen"
-        },
-        {
-          "FName": "4Julia",
-          "LName": "Williams",
-          "SAM": "4jwilliams"
+          "SAM": "jwilliams"
         }
       ],
       "metadata": {
@@ -200,12 +89,11 @@
     },
     "vmSize": {
       "type": "string",
-      "defaultValue": "Standard_B2ms",
       "metadata": {
         "description": "Select a VM SKU (please ensure the SKU is available in your selected region)."
       }
     },
-    "adSubnetResourceId": {
+    "subnetResourceId": {
       "type": "string",
       "metadata": {
         "description": "The subnet Resource Id to which the Domain Controller will be attached."
@@ -213,7 +101,7 @@
     }
   },
   "variables": {
-    "networkInterfaceName": "NIC",
+    "networkInterfaceName": "nic",
     "addcVMNameSuffix": "dc",
     "companyNamePrefix": "[split(parameters('adDomainName'), '.')[0]]",
     "adVMName": "[toUpper(format('{0}{1}', variables('companyNamePrefix'), variables('addcVMNameSuffix')))]",
@@ -222,7 +110,7 @@
     "imageOffer": "WindowsServer",
     "imagePublisher": "MicrosoftWindowsServer",
     "imageSKU": "2019-Datacenter",
-    "adNicName": "[format('{0}-{1}-{2}', variables('adVMName'), variables('networkInterfaceName'), parameters('deploymentNumber'))]"
+    "adNicName": "[format('{0}-{1}', variables('adVMName'), variables('networkInterfaceName'))]"
   },
   "resources": [
     {
@@ -236,11 +124,11 @@
       "properties": {
         "ipConfigurations": [
           {
-            "name": "[format('ipconfig{0}', parameters('deploymentNumber'))]",
+            "name": "ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[parameters('adSubnetResourceId')]"
+                "id": "[parameters('subnetResourceId')]"
               }
             }
           }

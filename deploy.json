@@ -1,0 +1,2804 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.32.4.45862",
+      "templateHash": "17375269552299146122"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[deployment().location]"
+    },
+    "assetLocation": {
+      "type": "string",
+      "defaultValue": "https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/master/AAD-Hybrid-Lab/",
+      "metadata": {
+        "description": "This is the location in which all the linked templates are stored."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "ADAdmin",
+      "metadata": {
+        "description": "Username to set for the local User. Cannot be \"Administrator\", \"root\" and possibly other such common account names. "
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the local administrator account. Cannot be \"P@ssw0rd\" and possibly other such common passwords. Must be 8 characters long and three of the following complexity requirements: uppercase, lowercase, number, special character"
+      }
+    },
+    "adDomainName": {
+      "type": "string",
+      "metadata": {
+        "description": "IMPORTANT: Two-part internal AD name - short/NB name will be first part ('contoso'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur."
+      }
+    },
+    "entraIdPrimaryOrCustomDomainName": {
+      "type": "string",
+      "metadata": {
+        "description": "This needs to be specified in order to have a uniform logon experience within AVD"
+      }
+    },
+    "defaultUserPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Enter the password that will be applied to each user account to be created in AD."
+      }
+    },
+    "tagsByResourceType": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "The tags to apply to each resource by resource type."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2ms",
+      "metadata": {
+        "description": "Select a VM SKU (please ensure the SKU is available in your selected region)."
+      }
+    }
+  },
+  "variables": {
+    "$fxv#0": {
+      "AzureChina": {
+        "chinaeast": {
+          "abbreviation": "cne",
+          "recoveryServicesGeo": "sha",
+          "timeDifference": "+8:00",
+          "timeZone": "China Standard Time"
+        },
+        "chinaeast2": {
+          "abbreviation": "cne2",
+          "recoveryServicesGeo": "sha2",
+          "timeDifference": "+8:00",
+          "timeZone": "China Standard Time"
+        },
+        "chinanorth": {
+          "abbreviation": "cnn",
+          "recoveryServicesGeo": "bjb",
+          "timeDifference": "+8:00",
+          "timeZone": "China Standard Time"
+        },
+        "chinanorth2": {
+          "abbreviation": "cnn2",
+          "recoveryServicesGeo": "bjb2",
+          "timeDifference": "+8:00",
+          "timeZone": "China Standard Time"
+        }
+      },
+      "AzureCloud": {
+        "australiacentral": {
+          "abbreviation": "auc",
+          "recoveryServicesGeo": "acl",
+          "timeDifference": "+10:00",
+          "timeZone": "AUS Eastern Standard Time"
+        },
+        "australiacentral2": {
+          "abbreviation": "auc2",
+          "recoveryServicesGeo": "acl2",
+          "timeDifference": "+10:00",
+          "timeZone": "AUS Eastern Standard Time"
+        },
+        "australiaeast": {
+          "abbreviation": "aue",
+          "recoveryServicesGeo": "ae",
+          "timeDifference": "+10:00",
+          "timeZone": "AUS Eastern Standard Time"
+        },
+        "australiasoutheast": {
+          "abbreviation": "ause",
+          "recoveryServicesGeo": "ase",
+          "timeDifference": "+10:00",
+          "timeZone": "AUS Eastern Standard Time"
+        },
+        "brazilsouth": {
+          "abbreviation": "brs",
+          "recoveryServicesGeo": "brs",
+          "timeDifference": "-3:00",
+          "timeZone": "E. South America Standard Time"
+        },
+        "brazilsoutheast": {
+          "abbreviation": "brse",
+          "recoveryServicesGeo": "bse",
+          "timeDifference": "-3:00",
+          "timeZone": "E. South America Standard Time"
+        },
+        "canadacentral": {
+          "abbreviation": "cac",
+          "recoveryServicesGeo": "cnc",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        },
+        "canadaeast": {
+          "abbreviation": "cae",
+          "recoveryServicesGeo": "cne",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        },
+        "centralindia": {
+          "abbreviation": "inc",
+          "recoveryServicesGeo": "inc",
+          "timeDifference": "+5:30",
+          "timeZone": "India Standard Time"
+        },
+        "centralus": {
+          "abbreviation": "usc",
+          "recoveryServicesGeo": "cus",
+          "timeDifference": "-6:00",
+          "timeZone": "Central Standard Time"
+        },
+        "eastasia": {
+          "abbreviation": "ase",
+          "recoveryServicesGeo": "ea",
+          "timeDifference": "+8:00",
+          "timeZone": "China Standard Time"
+        },
+        "eastus": {
+          "abbreviation": "use",
+          "recoveryServicesGeo": "eus",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        },
+        "eastus2": {
+          "abbreviation": "use2",
+          "recoveryServicesGeo": "eus2",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        },
+        "francecentral": {
+          "abbreviation": "frc",
+          "recoveryServicesGeo": "frc",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "francesouth": {
+          "abbreviation": "frs",
+          "recoveryServicesGeo": "frs",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "germanynorth": {
+          "abbreviation": "den",
+          "recoveryServicesGeo": "gn",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "germanywestcentral": {
+          "abbreviation": "dewc",
+          "recoveryServicesGeo": "gwc",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "israelcentral": {
+          "abbreviation": "ilc",
+          "recoveryServicesGeo": "ilc",
+          "timeDifference": "+2:00",
+          "timeZone": "Israel Standard Time"
+        },
+        "italynorth": {
+          "abbreviation": "itn",
+          "recoveryServicesGeo": "itn",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "japaneast": {
+          "abbreviation": "jpe",
+          "recoveryServicesGeo": "jpe",
+          "timeDifference": "+9:00",
+          "timeZone": "Tokyo Standard Time"
+        },
+        "japanwest": {
+          "abbreviation": "jpw",
+          "recoveryServicesGeo": "jpw",
+          "timeDifference": "+9:00",
+          "timeZone": "Tokyo Standard Time"
+        },
+        "jioindiacentral": {
+          "abbreviation": "injc",
+          "recoveryServicesGeo": "jic",
+          "timeDifference": "+5:30",
+          "timeZone": "India Standard Time"
+        },
+        "jioindiawest": {
+          "abbreviation": "injw",
+          "recoveryServicesGeo": "jiw",
+          "timeDifference": "+5:30",
+          "timeZone": "India Standard Time"
+        },
+        "koreacentral": {
+          "abbreviation": "krc",
+          "recoveryServicesGeo": "krc",
+          "timeDifference": "+9:00",
+          "timeZone": "Korea Standard Time"
+        },
+        "koreasouth": {
+          "abbreviation": "krs",
+          "recoveryServicesGeo": "krs",
+          "timeDifference": "+9:00",
+          "timeZone": "Korea Standard Time"
+        },
+        "northcentralus": {
+          "abbreviation": "usnc",
+          "recoveryServicesGeo": "ncus",
+          "timeDifference": "-6:00",
+          "timeZone": "Central Standard Time"
+        },
+        "northeurope": {
+          "abbreviation": "eun",
+          "recoveryServicesGeo": "ne",
+          "timeDifference": "0:00",
+          "timeZone": "GMT Standard Time"
+        },
+        "norwayeast": {
+          "abbreviation": "noe",
+          "recoveryServicesGeo": "nwe",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "norwaywest": {
+          "abbreviation": "now",
+          "recoveryServicesGeo": "nww",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "polandcentral": {
+          "abbreviation": "plc",
+          "recoveryServicesGeo": "plc",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "qatarcentral": {
+          "abbreviation": "qac",
+          "recoveryServicesGeo": "qac",
+          "timeDifference": "+3:00",
+          "timeZone": "Arabian Standard Time"
+        },
+        "southafricanorth": {
+          "abbreviation": "zan",
+          "recoveryServicesGeo": "san",
+          "timeDifference": "+2:00",
+          "timeZone": "South Africa Standard Time"
+        },
+        "southafricawest": {
+          "abbreviation": "zaw",
+          "recoveryServicesGeo": "saw",
+          "timeDifference": "+2:00",
+          "timeZone": "South Africa Standard Time"
+        },
+        "southcentralus": {
+          "abbreviation": "ussc",
+          "recoveryServicesGeo": "scus",
+          "timeDifference": "-6:00",
+          "timeZone": "Central Standard Time"
+        },
+        "southeastasia": {
+          "abbreviation": "asse",
+          "recoveryServicesGeo": "sea",
+          "timeDifference": "+8:00",
+          "timeZone": "Singapore Standard Time"
+        },
+        "southindia": {
+          "abbreviation": "ins",
+          "recoveryServicesGeo": "ins",
+          "timeDifference": "+5:30",
+          "timeZone": "India Standard Time"
+        },
+        "swedencentral": {
+          "abbreviation": "sec",
+          "recoveryServicesGeo": "sdc",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "switzerlandnorth": {
+          "abbreviation": "chn",
+          "recoveryServicesGeo": "szn",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "switzerlandwest": {
+          "abbreviation": "chw",
+          "recoveryServicesGeo": "szw",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "uaecentral": {
+          "abbreviation": "aec",
+          "recoveryServicesGeo": "uac",
+          "timeDifference": "+3:00",
+          "timeZone": "Arabian Standard Time"
+        },
+        "uaenorth": {
+          "abbreviation": "aen",
+          "recoveryServicesGeo": "uan",
+          "timeDifference": "+3:00",
+          "timeZone": "Arabian Standard Time"
+        },
+        "uksouth": {
+          "abbreviation": "uks",
+          "recoveryServicesGeo": "uks",
+          "timeDifference": "0:00",
+          "timeZone": "GMT Standard Time"
+        },
+        "ukwest": {
+          "abbreviation": "ukw",
+          "recoveryServicesGeo": "ukw",
+          "timeDifference": "0:00",
+          "timeZone": "GMT Standard Time"
+        },
+        "westcentralus": {
+          "abbreviation": "uswc",
+          "recoveryServicesGeo": "wcus",
+          "timeDifference": "-7:00",
+          "timeZone": "Mountain Standard Time"
+        },
+        "westeurope": {
+          "abbreviation": "euw",
+          "recoveryServicesGeo": "we",
+          "timeDifference": "+1:00",
+          "timeZone": "Central Europe Standard Time"
+        },
+        "westindia": {
+          "abbreviation": "inw",
+          "recoveryServicesGeo": "inw",
+          "timeDifference": "+5:30",
+          "timeZone": "India Standard Time"
+        },
+        "westus": {
+          "abbreviation": "usw",
+          "recoveryServicesGeo": "wus",
+          "timeDifference": "-8:00",
+          "timeZone": "Pacific Standard Time"
+        },
+        "westus2": {
+          "abbreviation": "usw2",
+          "recoveryServicesGeo": "wus2",
+          "timeDifference": "-8:00",
+          "timeZone": "Pacific Standard Time"
+        },
+        "westus3": {
+          "abbreviation": "usw3",
+          "recoveryServicesGeo": "wus3",
+          "timeDifference": "-7:00",
+          "timeZone": "Mountain Standard Time"
+        }
+      },
+      "AzureUSGovernment": {
+        "usdodcentral": {
+          "abbreviation": "dodc",
+          "recoveryServicesGeo": "udc",
+          "timeDifference": "-6:00",
+          "timeZone": "Central Standard Time"
+        },
+        "usdodeast": {
+          "abbreviation": "dode",
+          "recoveryServicesGeo": "ude",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        },
+        "usgovarizona": {
+          "abbreviation": "az",
+          "recoveryServicesGeo": "uga",
+          "timeDifference": "-7:00",
+          "timeZone": "Mountain Standard Time"
+        },
+        "usgovtexas": {
+          "abbreviation": "tx",
+          "recoveryServicesGeo": "ugt",
+          "timeDifference": "-6:00",
+          "timeZone": "Central Standard Time"
+        },
+        "usgovvirginia": {
+          "abbreviation": "va",
+          "recoveryServicesGeo": "ugv",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        }
+      },
+      "USNat": {
+        "usnateast": {
+          "abbreviation": "east",
+          "recoveryServicesGeo": "exe",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        },
+        "usnatwest": {
+          "abbreviation": "west",
+          "recoveryServicesGeo": "exw",
+          "timeDifference": "-8:00",
+          "timeZone": "Pacific Standard Time"
+        }
+      },
+      "USSec": {
+        "usseceast": {
+          "abbreviation": "east",
+          "recoveryServicesGeo": "rxe",
+          "timeDifference": "-5:00",
+          "timeZone": "Eastern Standard Time"
+        },
+        "ussecwest": {
+          "abbreviation": "west",
+          "recoveryServicesGeo": "rxw",
+          "timeDifference": "-8:00",
+          "timeZone": "Pacific Standard Time"
+        }
+      }
+    },
+    "addsVnetAddressPrefix": "10.0.1.0/24",
+    "addsServerAddresses": [
+      "10.0.1.4"
+    ],
+    "addsSubnets": [
+      {
+        "name": "snet-adds",
+        "addressPrefix": "[variables('addsVnetAddressPrefix')]"
+      }
+    ],
+    "avdNsgRules": [
+      {
+        "name": "AVDServiceTraffic",
+        "properties": {
+          "priority": 100,
+          "access": "Allow",
+          "description": "Session host traffic to AVD control plane",
+          "destinationAddressPrefix": "WindowsVirtualDesktop",
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "protocol": "Tcp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "AzureCloud",
+        "properties": {
+          "priority": 110,
+          "access": "Allow",
+          "description": "Session host traffic to Azure cloud services",
+          "destinationAddressPrefix": "AzureCloud",
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "8443",
+          "protocol": "Tcp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "AzureMonitor",
+        "properties": {
+          "priority": 120,
+          "access": "Allow",
+          "description": "Session host traffic to Azure Monitor",
+          "destinationAddressPrefix": "AzureMonitor",
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "protocol": "Tcp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "AzureMarketPlace",
+        "properties": {
+          "priority": 130,
+          "access": "Allow",
+          "description": "Session host traffic to Azure Monitor",
+          "destinationAddressPrefix": "AzureFrontDoor.Frontend",
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "443",
+          "protocol": "Tcp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "WindowsActivationKMS",
+        "properties": {
+          "priority": 140,
+          "access": "Allow",
+          "description": "Session host traffic to Windows license activation services",
+          "destinationAddressPrefixes": [
+            "20.118.99.224",
+            "40.83.235.53",
+            "23.102.135.246"
+          ],
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "1688",
+          "protocol": "Tcp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "AzureInstanceMetadata",
+        "properties": {
+          "priority": 150,
+          "access": "Allow",
+          "description": "Session host traffic to Azure instance metadata",
+          "destinationAddressPrefix": "169.254.169.254",
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "80",
+          "protocol": "Tcp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "RDPShortpath",
+        "properties": {
+          "priority": 150,
+          "access": "Allow",
+          "description": "Session host traffic to RDP Shortpath Listener",
+          "destinationAddressPrefix": "VirtualNetwork",
+          "direction": "Inbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3390",
+          "protocol": "Udp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "RDPShortpathTurnStun",
+        "properties": {
+          "priority": 160,
+          "access": "Allow",
+          "description": "Session host traffic to RDP shortpath STUN/TURN",
+          "destinationAddressPrefix": "20.202.0.0/16",
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3478",
+          "protocol": "Udp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      },
+      {
+        "name": "RDPShortpathTurnRelay",
+        "properties": {
+          "priority": 170,
+          "access": "Allow",
+          "description": "Session host traffic to RDP shortpath STUN/TURN",
+          "destinationAddressPrefix": "51.5.0.0/16",
+          "direction": "Outbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3478",
+          "protocol": "Udp",
+          "sourceAddressPrefix": "VirtualNetwork"
+        }
+      }
+    ],
+    "avdVnetAddressPrefix": "10.0.2.0/24",
+    "avdSubnets": [
+      {
+        "name": "snet-avd-marketplace-hosts",
+        "addressPrefix": "10.0.2.0/26"
+      },
+      {
+        "name": "snet-avd-customimage-hosts",
+        "addressPrefix": "10.0.2.64/26"
+      },
+      {
+        "name": "snet-privateEndpoints",
+        "addressPrefix": "10.0.2.192/26"
+      }
+    ],
+    "hubVnetAddressPrefix": "10.0.0.0/24",
+    "bastionSubnetPrefix": "10.0.0.0/26",
+    "firewallSubnetPrefix": "10.0.0.64/26",
+    "gatewaySubnetPrefix": "10.0.0.128/27",
+    "deploymentSuffix": "[uniqueString(subscription().id, parameters('location'))]",
+    "locations": "[variables('$fxv#0')[environment().name]]",
+    "resourceGroups": [
+      "[format('rg-hub-networking-{0}', variables('locations')[parameters('location')].abbreviation)]",
+      "rg-privateDnsZones",
+      "[format('rg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]",
+      "[format('rg-avd-networking-{0}', variables('locations')[parameters('location')].abbreviation)]"
+    ]
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "rgs",
+        "count": "[length(variables('resourceGroups'))]"
+      },
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('resourceGroups')[copyIndex()]]",
+      "location": "[parameters('location')]",
+      "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Resources/ResourceGroups'), createObject())]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('hub-networking-{0}', variables('deploymentSuffix'))]",
+      "resourceGroup": "[variables('resourceGroups')[0]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "vnetAddressPrefix": {
+            "value": "[variables('hubVnetAddressPrefix')]"
+          },
+          "addsSubnetAddresses": {
+            "value": [
+              "[variables('addsVnetAddressPrefix')]"
+            ]
+          },
+          "avdSubnetAddresses": {
+            "value": [
+              "[variables('avdVnetAddressPrefix')]"
+            ]
+          },
+          "bastionName": {
+            "value": "[format('bas-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "bastionPublicIpName": {
+            "value": "[format('pip--{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "firewallName": {
+            "value": "[format('afw-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "firewallPolicyName": {
+            "value": "[format('afwp-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "firewallPublicIpName": {
+            "value": "[format('pip-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "vnetName": {
+            "value": "[format('vnet-hub--{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "bastionSubnetPrefix": {
+            "value": "[variables('bastionSubnetPrefix')]"
+          },
+          "firewallSubnetPrefix": {
+            "value": "[variables('firewallSubnetPrefix')]"
+          },
+          "gatewaySubnetPrefix": {
+            "value": "[variables('gatewaySubnetPrefix')]"
+          },
+          "dnsServers": {
+            "value": "[variables('addsServerAddresses')]"
+          },
+          "tagsByResourceType": {
+            "value": "[parameters('tagsByResourceType')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "14012072275409125704"
+            }
+          },
+          "parameters": {
+            "addsSubnetAddresses": {
+              "type": "array",
+              "metadata": {
+                "description": "The address prefixes of the Domain Controller subnet/vnet."
+              }
+            },
+            "avdSubnetAddresses": {
+              "type": "array",
+              "metadata": {
+                "description": "The address Prefixes of the AVD Session Hosts."
+              }
+            },
+            "dnsServers": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "The DNS servers to use for the virtual network."
+              }
+            },
+            "vnetAddressPrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "The address prefix for the virtual network."
+              }
+            },
+            "firewallPolicyName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Azure Firewall policy."
+              }
+            },
+            "firewallSubnetPrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "The address prefix for the Azure Firewall subnet."
+              }
+            },
+            "bastionSubnetPrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "The address prefix for the Azure Bastion subnet."
+              }
+            },
+            "gatewaySubnetPrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "The address prefix for the ExpressRoute Gateway subnet."
+              }
+            },
+            "vnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the virtual network."
+              }
+            },
+            "firewallName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Azure Firewall."
+              }
+            },
+            "firewallPublicIpName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the public IP for the Azure Firewall."
+              }
+            },
+            "bastionName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Azure Bastion."
+              }
+            },
+            "bastionPublicIpName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the public IP for the Azure Bastion."
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "The location of the resources."
+              }
+            },
+            "tagsByResourceType": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-02-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefix')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "AzureFirewallSubnet",
+                    "properties": {
+                      "addressPrefix": "[parameters('firewallSubnetPrefix')]"
+                    }
+                  },
+                  {
+                    "name": "AzureBastionSubnet",
+                    "properties": {
+                      "addressPrefix": "[parameters('bastionSubnetPrefix')]"
+                    }
+                  },
+                  {
+                    "name": "GatewaySubnet",
+                    "properties": {
+                      "addressPrefix": "[parameters('gatewaySubnetPrefix')]"
+                    }
+                  }
+                ]
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/virtualNetworks'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-02-01",
+              "name": "[parameters('firewallPublicIpName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/publicIPAddresses'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-02-01",
+              "name": "[parameters('bastionPublicIpName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/publicIPAddresses'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies",
+              "apiVersion": "2023-02-01",
+              "name": "[parameters('firewallPolicyName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "dnsSettings": {
+                  "servers": "[if(not(empty(parameters('dnsServers'))), parameters('dnsServers'), null())]",
+                  "enableProxy": true
+                },
+                "sku": {
+                  "tier": "Standard"
+                },
+                "threatIntelMode": "Alert"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/firewallPolicies'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'AVD-Core')]",
+              "properties": {
+                "priority": 10000,
+                "ruleCollections": [
+                  {
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "name": "NetworkRules_AVD-Core",
+                    "priority": 10100,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "AVD Service Traffic",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "WindowsVirtualDesktop"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Agent Traffic (1)",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "AzureMonitor"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Agent Traffic (2)",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "[format('gcs.prod.monitoring.{0}', environment().suffixes.storage)]"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Azure Marketplace",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "AzureFrontDoor.Frontend"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Windows activation",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "[format('kms.{0}', environment().suffixes.storage)]"
+                        ],
+                        "destinationPorts": [
+                          "1688"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Azure Windows activation",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "[format('azkms.{0}', environment().suffixes.storage)]"
+                        ],
+                        "destinationPorts": [
+                          "1688"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Agent and SXS Stack Updates",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "[format('mrsglobalsteus2prod.blob.{0}', environment().suffixes.storage)]"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Azure Portal Support",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "[format('wvdportalstorageblob.blob.{0}', environment().suffixes.storage)]"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Certificate CRL OneOCSP",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "oneocsp.microsoft.com"
+                        ],
+                        "destinationPorts": [
+                          "80"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Certificate CRL MicrosoftDotCom",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "www.microsoft.com"
+                        ],
+                        "destinationPorts": [
+                          "80"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Authentication to Microsoft Online Services",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "[replace(environment().authentication.loginEndpoint, 'https://', '')]"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'AVD-Optional')]",
+              "properties": {
+                "priority": 11000,
+                "ruleCollections": [
+                  {
+                    "name": "NetworkRules_AVD-Optional",
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "priority": 11100,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "NTP",
+                        "ipProtocols": [
+                          "TCP",
+                          "UDP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "time.windows.com"
+                        ],
+                        "destinationPorts": [
+                          "123"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "SigninToMSOL365",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "[environment().authentication.loginEndpoint]"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "DetectOSconnectedToInternet",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [
+                          "www.msftconnecttest.com"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "RDP Shortpath Server Endpoint",
+                        "ipProtocols": [
+                          "UDP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "*"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "49152-65535"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "STUN/TURN UDP",
+                        "ipProtocols": [
+                          "UDP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "20.202.0.0/16"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "3478"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "STUN/TURN TCP",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "20.202.0.0/16"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ApplicationRules_AVD-Optional",
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "priority": 11200,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "TelemetryService",
+                        "protocols": [
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "fqdnTags": [],
+                        "webCategories": [],
+                        "targetFqdns": [
+                          "*.events.data.microsoft.com"
+                        ],
+                        "targetUrls": [],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      },
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "WindowsUpdate",
+                        "protocols": [
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "fqdnTags": [
+                          "WindowsUpdate"
+                        ],
+                        "webCategories": [],
+                        "targetFqdns": [],
+                        "targetUrls": [],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      },
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "UpdatesForOneDrive",
+                        "protocols": [
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "fqdnTags": [],
+                        "webCategories": [],
+                        "targetFqdns": [
+                          "*.sfx.ms"
+                        ],
+                        "targetUrls": [],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      },
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "DigicertCRL",
+                        "protocols": [
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "fqdnTags": [],
+                        "webCategories": [],
+                        "targetFqdns": [
+                          "*.digicert.com"
+                        ],
+                        "targetUrls": [],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      },
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "AzureDNSresolution1",
+                        "protocols": [
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "fqdnTags": [],
+                        "webCategories": [],
+                        "targetFqdns": [
+                          "*.azure-dns.com"
+                        ],
+                        "targetUrls": [],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      },
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "AzureDNSresolution2",
+                        "protocols": [
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "fqdnTags": [],
+                        "webCategories": [],
+                        "targetFqdns": [
+                          "*.azure-dns.net"
+                        ],
+                        "targetUrls": [],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      },
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "WindowsDiagnostics",
+                        "protocols": [
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "fqdnTags": [
+                          "WindowsDiagnostics"
+                        ],
+                        "webCategories": [],
+                        "targetFqdns": [],
+                        "targetUrls": [],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'ADDS_Core')]",
+              "properties": {
+                "priority": 5000,
+                "ruleCollections": [
+                  {
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "name": "NetworkRules_AllowBastionToDC",
+                    "priority": 5100,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "name": "AllowTCPAVDSubnetToDCSubnet",
+                        "ruleType": "NetworkRule",
+                        "sourceAddresses": [
+                          "[parameters('bastionSubnetPrefix')]"
+                        ],
+                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationPorts": [
+                          "3389"
+                        ],
+                        "ipProtocols": [
+                          "TCP"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "name": "NetworkRules_AllowAVDToDC",
+                    "priority": 5200,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "name": "AllowTCPAVDSubnetToDCSubnet",
+                        "ruleType": "NetworkRule",
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationPorts": [
+                          "88",
+                          "123",
+                          "135",
+                          "389",
+                          "445",
+                          "636",
+                          "3268",
+                          "3269",
+                          "49152-65535"
+                        ],
+                        "ipProtocols": [
+                          "TCP"
+                        ]
+                      },
+                      {
+                        "name": "AllowUDPAVDSubnetToDCSubnet",
+                        "ruleType": "NetworkRule",
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationPorts": [
+                          "88",
+                          "389"
+                        ],
+                        "ipProtocols": [
+                          "UDP"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "AllowDCToInternet",
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "priority": 5300,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "name": "AllowDCToWindowsUpdate",
+                        "ruleType": "ApplicationRule",
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
+                        "targetFqdns": [
+                          "windowsupdate.microsoft.com",
+                          "update.microsoft.com",
+                          "download.windowsupdate.com",
+                          "download.microsoft.com"
+                        ],
+                        "protocols": [
+                          {
+                            "protocolType": "Http"
+                          },
+                          {
+                            "protocolType": "Https"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "AllowDCToAzureAuth",
+                        "ruleType": "ApplicationRule",
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
+                        "targetFqdns": [
+                          "[replace(environment().resourceManager, 'https://', '')]",
+                          "[replace(environment().authentication.loginEndpoint, 'https://', '')]",
+                          "[replace(environment().authentication.audiences[0], 'https://', '')]",
+                          "[replace(environment().authentication.audiences[1], 'https://', '')]",
+                          "[replace(environment().graph, 'https://', '')]"
+                        ],
+                        "protocols": [
+                          {
+                            "protocolType": "Http"
+                          },
+                          {
+                            "protocolType": "Https"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "AllowDCToGithub",
+                        "ruleType": "ApplicationRule",
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
+                        "targetFqdns": [
+                          "*.github.com",
+                          "*.githubusercontent.com"
+                        ],
+                        "protocols": [
+                          {
+                            "protocolType": "Http"
+                          },
+                          {
+                            "protocolType": "Https"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/azureFirewalls",
+              "apiVersion": "2023-02-01",
+              "name": "[parameters('firewallName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "tier": "Standard"
+                },
+                "networkRuleCollections": [],
+                "applicationRuleCollections": [],
+                "natRuleCollections": [],
+                "firewallPolicy": {
+                  "id": "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
+                },
+                "ipConfigurations": [
+                  {
+                    "name": "azureFirewallIpConfig",
+                    "properties": {
+                      "subnet": {
+                        "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-02-01').subnets[0].id]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/azureFirewalls'), createObject())]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/bastionHosts",
+              "apiVersion": "2023-02-01",
+              "name": "[parameters('bastionName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "bastionIpConfig",
+                    "properties": {
+                      "subnet": {
+                        "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-02-01').subnets[1].id]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('bastionPublicIpName'))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/bastionHosts'), createObject())]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('bastionPublicIpName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "hubVnetResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            },
+            "firewallIp": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/azureFirewalls', parameters('firewallName')), '2023-02-01').ipConfigurations[0].properties.privateIPAddress]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "rgs"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('adds-networking-{0}', variables('deploymentSuffix'))]",
+      "resourceGroup": "[variables('resourceGroups')[2]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "deploymentSuffix": {
+            "value": "[variables('deploymentSuffix')]"
+          },
+          "fwIPAddress": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
+          },
+          "hubVnetResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
+          },
+          "nsgName": {
+            "value": "[format('nsg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "nsgSecurityRules": {
+            "value": [
+              {
+                "name": "DNS (TCP)",
+                "properties": {
+                  "priority": 100,
+                  "access": "Allow",
+                  "description": "DNS (TCP)",
+                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+                  "direction": "Inbound",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "53",
+                  "protocol": "Tcp",
+                  "sourceAddressPrefixes": [
+                    "[variables('addsVnetAddressPrefix')]",
+                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
+                  ]
+                }
+              },
+              {
+                "name": "DNS (UDP)",
+                "properties": {
+                  "priority": 110,
+                  "access": "Allow",
+                  "description": "DNS (UDP)",
+                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+                  "direction": "Inbound",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "53",
+                  "protocol": "Udp",
+                  "sourceAddressPrefixes": [
+                    "[variables('addsVnetAddressPrefix')]",
+                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
+                  ]
+                }
+              },
+              {
+                "name": "Domain Services (TCP)",
+                "properties": {
+                  "priority": 120,
+                  "access": "Allow",
+                  "description": "Domain Services (TCP)",
+                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+                  "direction": "Inbound",
+                  "sourcePortRange": "*",
+                  "destinationPortRanges": [
+                    "88",
+                    "123",
+                    "135",
+                    "389",
+                    "445",
+                    "636",
+                    "3268",
+                    "3269",
+                    "49152-65535"
+                  ],
+                  "protocol": "Tcp",
+                  "sourceAddressPrefixes": [
+                    "[variables('addsVnetAddressPrefix')]",
+                    "[variables('avdVnetAddressPrefix')]"
+                  ]
+                }
+              },
+              {
+                "name": "Domain Services (UDP)",
+                "properties": {
+                  "priority": 130,
+                  "access": "Allow",
+                  "description": "Domain Services (UDP)",
+                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+                  "direction": "Inbound",
+                  "sourcePortRange": "*",
+                  "destinationPortRanges": [
+                    "88",
+                    "389"
+                  ],
+                  "protocol": "Udp",
+                  "sourceAddressPrefixes": [
+                    "[variables('addsVnetAddressPrefix')]",
+                    "[variables('avdVnetAddressPrefix')]"
+                  ]
+                }
+              },
+              {
+                "name": "RDP",
+                "properties": {
+                  "priority": 140,
+                  "access": "Allow",
+                  "description": "RDP",
+                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+                  "direction": "Inbound",
+                  "sourcePortRange": "*",
+                  "destinationPortRange": "3389",
+                  "protocol": "Tcp",
+                  "sourceAddressPrefixes": [
+                    "[variables('addsVnetAddressPrefix')]",
+                    "[variables('bastionSubnetPrefix')]"
+                  ]
+                }
+              }
+            ]
+          },
+          "routeTableName": {
+            "value": "[format('rt-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "subnets": {
+            "value": "[variables('addsSubnets')]"
+          },
+          "tagsByResourceType": {
+            "value": "[parameters('tagsByResourceType')]"
+          },
+          "vnetAddressPrefix": {
+            "value": "[variables('addsVnetAddressPrefix')]"
+          },
+          "vnetName": {
+            "value": "[format('vnet-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "12379379682802111390"
+            }
+          },
+          "parameters": {
+            "vnetName": {
+              "type": "string"
+            },
+            "nsgName": {
+              "type": "string"
+            },
+            "nsgSecurityRules": {
+              "type": "array"
+            },
+            "deploymentSuffix": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "hubVnetResourceId": {
+              "type": "string"
+            },
+            "vnetAddressPrefix": {
+              "type": "string"
+            },
+            "fwIPAddress": {
+              "type": "string"
+            },
+            "subnets": {
+              "type": "array"
+            },
+            "routeTableName": {
+              "type": "string"
+            },
+            "tagsByResourceType": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "snets": "[map(parameters('subnets'), lambda('snet', createObject('name', lambdaVariables('snet').name, 'properties', createObject('addressPrefix', lambdaVariables('snet').addressPrefix, 'routeTable', createObject('id', resourceId('Microsoft.Network/routeTables', parameters('routeTableName'))), 'networkSecurityGroup', if(contains(lambdaVariables('snet').name, 'privateEndpoints'), null(), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))))))))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-04-01",
+              "name": "[parameters('nsgName')]",
+              "properties": {
+                "securityRules": "[parameters('nsgSecurityRules')]"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/networkSecurityGroups'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/routeTables",
+              "apiVersion": "2023-04-01",
+              "name": "[parameters('routeTableName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "routes": [
+                  {
+                    "name": "DefaultRoute",
+                    "properties": {
+                      "addressPrefix": "0.0.0.0/0",
+                      "nextHopType": "VirtualAppliance",
+                      "nextHopIpAddress": "[parameters('fwIPAddress')]"
+                    }
+                  }
+                ]
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/routeTables'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('vnetName')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefix')]"
+                  ]
+                },
+                "dhcpOptions": {
+                  "dnsServers": [
+                    "[parameters('fwIPAddress')]"
+                  ]
+                },
+                "subnets": "[variables('snets')]"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/virtualNetworks'), createObject())]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]",
+                "[resourceId('Microsoft.Network/routeTables', parameters('routeTableName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('localVnetPeering-{0}', parameters('deploymentSuffix'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "allowForwardedTraffic": {
+                    "value": true
+                  },
+                  "allowVirtualNetworkAccess": {
+                    "value": true
+                  },
+                  "localVnetName": {
+                    "value": "[parameters('vnetName')]"
+                  },
+                  "remoteVirtualNetworkId": {
+                    "value": "[parameters('hubVnetResourceId')]"
+                  },
+                  "useRemoteGateways": {
+                    "value": false
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.32.4.45862",
+                      "templateHash": "13742780318657769626"
+                    }
+                  },
+                  "parameters": {
+                    "name": {
+                      "type": "string",
+                      "defaultValue": "[format('{0}-{1}', parameters('localVnetName'), last(split(parameters('remoteVirtualNetworkId'), '/')))]"
+                    },
+                    "localVnetName": {
+                      "type": "string"
+                    },
+                    "remoteVirtualNetworkId": {
+                      "type": "string"
+                    },
+                    "allowForwardedTraffic": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "allowGatewayTransit": {
+                      "type": "bool",
+                      "defaultValue": false
+                    },
+                    "allowVirtualNetworkAccess": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "doNotVerifyRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "useRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": false
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                      "apiVersion": "2023-04-01",
+                      "name": "[format('{0}/{1}', parameters('localVnetName'), parameters('name'))]",
+                      "properties": {
+                        "allowForwardedTraffic": "[parameters('allowForwardedTraffic')]",
+                        "allowGatewayTransit": "[parameters('allowGatewayTransit')]",
+                        "allowVirtualNetworkAccess": "[parameters('allowVirtualNetworkAccess')]",
+                        "doNotVerifyRemoteGateways": "[parameters('doNotVerifyRemoteGateways')]",
+                        "useRemoteGateways": "[parameters('useRemoteGateways')]",
+                        "remoteVirtualNetwork": {
+                          "id": "[parameters('remoteVirtualNetworkId')]"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('remoteVnetPeering-{0}', parameters('deploymentSuffix'))]",
+              "resourceGroup": "[split(parameters('hubVnetResourceId'), '/')[4]]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "allowForwardedTraffic": {
+                    "value": true
+                  },
+                  "allowVirtualNetworkAccess": {
+                    "value": true
+                  },
+                  "localVnetName": {
+                    "value": "[last(split(parameters('hubVnetResourceId'), '/'))]"
+                  },
+                  "remoteVirtualNetworkId": {
+                    "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+                  },
+                  "allowGatewayTransit": {
+                    "value": false
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.32.4.45862",
+                      "templateHash": "13742780318657769626"
+                    }
+                  },
+                  "parameters": {
+                    "name": {
+                      "type": "string",
+                      "defaultValue": "[format('{0}-{1}', parameters('localVnetName'), last(split(parameters('remoteVirtualNetworkId'), '/')))]"
+                    },
+                    "localVnetName": {
+                      "type": "string"
+                    },
+                    "remoteVirtualNetworkId": {
+                      "type": "string"
+                    },
+                    "allowForwardedTraffic": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "allowGatewayTransit": {
+                      "type": "bool",
+                      "defaultValue": false
+                    },
+                    "allowVirtualNetworkAccess": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "doNotVerifyRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "useRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": false
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                      "apiVersion": "2023-04-01",
+                      "name": "[format('{0}/{1}', parameters('localVnetName'), parameters('name'))]",
+                      "properties": {
+                        "allowForwardedTraffic": "[parameters('allowForwardedTraffic')]",
+                        "allowGatewayTransit": "[parameters('allowGatewayTransit')]",
+                        "allowVirtualNetworkAccess": "[parameters('allowVirtualNetworkAccess')]",
+                        "doNotVerifyRemoteGateways": "[parameters('doNotVerifyRemoteGateways')]",
+                        "useRemoteGateways": "[parameters('useRemoteGateways')]",
+                        "remoteVirtualNetwork": {
+                          "id": "[parameters('remoteVirtualNetworkId')]"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "subnetResourceIds": {
+              "type": "array",
+              "copy": {
+                "count": "[length(variables('snets'))]",
+                "input": "[format('{0}/subnets/{1}', resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), variables('snets')[copyIndex()].name)]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "rgs"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('avd-networking-{0}', variables('deploymentSuffix'))]",
+      "resourceGroup": "[variables('resourceGroups')[3]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "deploymentSuffix": {
+            "value": "[variables('deploymentSuffix')]"
+          },
+          "fwIPAddress": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
+          },
+          "hubVnetResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
+          },
+          "nsgName": {
+            "value": "[format('nsg-avd-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "nsgSecurityRules": {
+            "value": "[variables('avdNsgRules')]"
+          },
+          "routeTableName": {
+            "value": "[format('rt-avd-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "subnets": {
+            "value": "[variables('avdSubnets')]"
+          },
+          "tagsByResourceType": {
+            "value": "[parameters('tagsByResourceType')]"
+          },
+          "vnetAddressPrefix": {
+            "value": "[variables('avdVnetAddressPrefix')]"
+          },
+          "vnetName": {
+            "value": "[format('vnet-avd-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "12379379682802111390"
+            }
+          },
+          "parameters": {
+            "vnetName": {
+              "type": "string"
+            },
+            "nsgName": {
+              "type": "string"
+            },
+            "nsgSecurityRules": {
+              "type": "array"
+            },
+            "deploymentSuffix": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "hubVnetResourceId": {
+              "type": "string"
+            },
+            "vnetAddressPrefix": {
+              "type": "string"
+            },
+            "fwIPAddress": {
+              "type": "string"
+            },
+            "subnets": {
+              "type": "array"
+            },
+            "routeTableName": {
+              "type": "string"
+            },
+            "tagsByResourceType": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "snets": "[map(parameters('subnets'), lambda('snet', createObject('name', lambdaVariables('snet').name, 'properties', createObject('addressPrefix', lambdaVariables('snet').addressPrefix, 'routeTable', createObject('id', resourceId('Microsoft.Network/routeTables', parameters('routeTableName'))), 'networkSecurityGroup', if(contains(lambdaVariables('snet').name, 'privateEndpoints'), null(), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))))))))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-04-01",
+              "name": "[parameters('nsgName')]",
+              "properties": {
+                "securityRules": "[parameters('nsgSecurityRules')]"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/networkSecurityGroups'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/routeTables",
+              "apiVersion": "2023-04-01",
+              "name": "[parameters('routeTableName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "routes": [
+                  {
+                    "name": "DefaultRoute",
+                    "properties": {
+                      "addressPrefix": "0.0.0.0/0",
+                      "nextHopType": "VirtualAppliance",
+                      "nextHopIpAddress": "[parameters('fwIPAddress')]"
+                    }
+                  }
+                ]
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/routeTables'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('vnetName')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefix')]"
+                  ]
+                },
+                "dhcpOptions": {
+                  "dnsServers": [
+                    "[parameters('fwIPAddress')]"
+                  ]
+                },
+                "subnets": "[variables('snets')]"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/virtualNetworks'), createObject())]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]",
+                "[resourceId('Microsoft.Network/routeTables', parameters('routeTableName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('localVnetPeering-{0}', parameters('deploymentSuffix'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "allowForwardedTraffic": {
+                    "value": true
+                  },
+                  "allowVirtualNetworkAccess": {
+                    "value": true
+                  },
+                  "localVnetName": {
+                    "value": "[parameters('vnetName')]"
+                  },
+                  "remoteVirtualNetworkId": {
+                    "value": "[parameters('hubVnetResourceId')]"
+                  },
+                  "useRemoteGateways": {
+                    "value": false
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.32.4.45862",
+                      "templateHash": "13742780318657769626"
+                    }
+                  },
+                  "parameters": {
+                    "name": {
+                      "type": "string",
+                      "defaultValue": "[format('{0}-{1}', parameters('localVnetName'), last(split(parameters('remoteVirtualNetworkId'), '/')))]"
+                    },
+                    "localVnetName": {
+                      "type": "string"
+                    },
+                    "remoteVirtualNetworkId": {
+                      "type": "string"
+                    },
+                    "allowForwardedTraffic": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "allowGatewayTransit": {
+                      "type": "bool",
+                      "defaultValue": false
+                    },
+                    "allowVirtualNetworkAccess": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "doNotVerifyRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "useRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": false
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                      "apiVersion": "2023-04-01",
+                      "name": "[format('{0}/{1}', parameters('localVnetName'), parameters('name'))]",
+                      "properties": {
+                        "allowForwardedTraffic": "[parameters('allowForwardedTraffic')]",
+                        "allowGatewayTransit": "[parameters('allowGatewayTransit')]",
+                        "allowVirtualNetworkAccess": "[parameters('allowVirtualNetworkAccess')]",
+                        "doNotVerifyRemoteGateways": "[parameters('doNotVerifyRemoteGateways')]",
+                        "useRemoteGateways": "[parameters('useRemoteGateways')]",
+                        "remoteVirtualNetwork": {
+                          "id": "[parameters('remoteVirtualNetworkId')]"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('remoteVnetPeering-{0}', parameters('deploymentSuffix'))]",
+              "resourceGroup": "[split(parameters('hubVnetResourceId'), '/')[4]]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "allowForwardedTraffic": {
+                    "value": true
+                  },
+                  "allowVirtualNetworkAccess": {
+                    "value": true
+                  },
+                  "localVnetName": {
+                    "value": "[last(split(parameters('hubVnetResourceId'), '/'))]"
+                  },
+                  "remoteVirtualNetworkId": {
+                    "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+                  },
+                  "allowGatewayTransit": {
+                    "value": false
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.32.4.45862",
+                      "templateHash": "13742780318657769626"
+                    }
+                  },
+                  "parameters": {
+                    "name": {
+                      "type": "string",
+                      "defaultValue": "[format('{0}-{1}', parameters('localVnetName'), last(split(parameters('remoteVirtualNetworkId'), '/')))]"
+                    },
+                    "localVnetName": {
+                      "type": "string"
+                    },
+                    "remoteVirtualNetworkId": {
+                      "type": "string"
+                    },
+                    "allowForwardedTraffic": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "allowGatewayTransit": {
+                      "type": "bool",
+                      "defaultValue": false
+                    },
+                    "allowVirtualNetworkAccess": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "doNotVerifyRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": true
+                    },
+                    "useRemoteGateways": {
+                      "type": "bool",
+                      "defaultValue": false
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+                      "apiVersion": "2023-04-01",
+                      "name": "[format('{0}/{1}', parameters('localVnetName'), parameters('name'))]",
+                      "properties": {
+                        "allowForwardedTraffic": "[parameters('allowForwardedTraffic')]",
+                        "allowGatewayTransit": "[parameters('allowGatewayTransit')]",
+                        "allowVirtualNetworkAccess": "[parameters('allowVirtualNetworkAccess')]",
+                        "doNotVerifyRemoteGateways": "[parameters('doNotVerifyRemoteGateways')]",
+                        "useRemoteGateways": "[parameters('useRemoteGateways')]",
+                        "remoteVirtualNetwork": {
+                          "id": "[parameters('remoteVirtualNetworkId')]"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "subnetResourceIds": {
+              "type": "array",
+              "copy": {
+                "count": "[length(variables('snets'))]",
+                "input": "[format('{0}/subnets/{1}', resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), variables('snets')[copyIndex()].name)]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "rgs"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('adds-servers-{0}', variables('deploymentSuffix'))]",
+      "resourceGroup": "[variables('resourceGroups')[2]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "adDomainName": {
+            "value": "[parameters('adDomainName')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "assetLocation": {
+            "value": "[parameters('assetLocation')]"
+          },
+          "defaultUserPassword": {
+            "value": "[parameters('defaultUserPassword')]"
+          },
+          "entraIdPrimaryOrCustomDomainName": {
+            "value": "[parameters('entraIdPrimaryOrCustomDomainName')]"
+          },
+          "subnetResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.subnetResourceIds.value[0]]"
+          },
+          "tagsByResourceType": {
+            "value": "[parameters('tagsByResourceType')]"
+          },
+          "vmSize": {
+            "value": "[parameters('vmSize')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "12372703176165890666"
+            }
+          },
+          "parameters": {
+            "assetLocation": {
+              "type": "string",
+              "metadata": {
+                "description": "This is the location in which all the linked templates are stored."
+              }
+            },
+            "adminUsername": {
+              "type": "string",
+              "metadata": {
+                "description": "Username to set for the local User. Cannot be \"Administrator\", \"root\" and possibly other such common account names. "
+              }
+            },
+            "adminPassword": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Password for the local administrator account. Cannot be \"P@ssw0rd\" and possibly other such common passwords. Must be 8 characters long and three of the following complexity requirements: uppercase, lowercase, number, special character"
+              }
+            },
+            "adDomainName": {
+              "type": "string",
+              "metadata": {
+                "description": "IMPORTANT: Two-part internal AD name - short/NB name will be first part ('contoso'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur."
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "usersArray": {
+              "type": "array",
+              "defaultValue": [
+                {
+                  "FName": "Bob",
+                  "LName": "Jones",
+                  "SAM": "bjones"
+                },
+                {
+                  "FName": "Bill",
+                  "LName": "Smith",
+                  "SAM": "bsmith"
+                },
+                {
+                  "FName": "Mary",
+                  "LName": "Phillips",
+                  "SAM": "mphillips"
+                },
+                {
+                  "FName": "Sue",
+                  "LName": "Jackson",
+                  "SAM": "sjackson"
+                },
+                {
+                  "FName": "Jack",
+                  "LName": "Petersen",
+                  "SAM": "jpetersen"
+                },
+                {
+                  "FName": "Julia",
+                  "LName": "Williams",
+                  "SAM": "jwilliams"
+                }
+              ],
+              "metadata": {
+                "description": "JSON object array of users that will be loaded into AD once the domain is established."
+              }
+            },
+            "entraIdPrimaryOrCustomDomainName": {
+              "type": "string",
+              "metadata": {
+                "description": "This needs to be specified in order to have a uniform logon experience within AVD"
+              }
+            },
+            "defaultUserPassword": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Enter the password that will be applied to each user account to be created in AD."
+              }
+            },
+            "vmSize": {
+              "type": "string",
+              "metadata": {
+                "description": "Select a VM SKU (please ensure the SKU is available in your selected region)."
+              }
+            },
+            "subnetResourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "The subnet Resource Id to which the Domain Controller will be attached."
+              }
+            },
+            "tagsByResourceType": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "networkInterfaceName": "nic",
+            "addcVMNameSuffix": "dc",
+            "companyNamePrefix": "[split(parameters('adDomainName'), '.')[0]]",
+            "adVMName": "[toUpper(format('{0}{1}', variables('companyNamePrefix'), variables('addcVMNameSuffix')))]",
+            "adDSCTemplate": "[format('{0}DSC/adDSC.zip', parameters('assetLocation'))]",
+            "adDSCConfigurationFunction": "adDSCConfiguration.ps1\\DomainController",
+            "imageOffer": "WindowsServer",
+            "imagePublisher": "MicrosoftWindowsServer",
+            "imageSKU": "2019-Datacenter",
+            "adNicName": "[format('{0}-{1}', variables('adVMName'), variables('networkInterfaceName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2019-12-01",
+              "name": "[variables('adNicName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                        "id": "[parameters('subnetResourceId')]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/networkInterfaces'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2019-07-01",
+              "name": "[variables('adVMName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                  "computerName": "[variables('adVMName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "[variables('imagePublisher')]",
+                    "offer": "[variables('imageOffer')]",
+                    "sku": "[variables('imageSKU')]",
+                    "version": "latest"
+                  },
+                  "osDisk": {
+                    "caching": "ReadWrite",
+                    "createOption": "FromImage"
+                  }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
+                    }
+                  ]
+                }
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Compute/virtualMachines'), createObject())]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('adNicName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines/extensions",
+              "apiVersion": "2019-07-01",
+              "name": "[format('{0}/{1}', variables('adVMName'), 'Microsoft.Powershell.DSC')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "publisher": "Microsoft.Powershell",
+                "type": "DSC",
+                "typeHandlerVersion": "2.21",
+                "forceUpdateTag": "1.02",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                  "modulesUrl": "[variables('adDSCTemplate')]",
+                  "configurationFunction": "[variables('adDSCConfigurationFunction')]",
+                  "properties": [
+                    {
+                      "Name": "adDomainName",
+                      "Value": "[parameters('adDomainName')]",
+                      "TypeName": "System.Object"
+                    },
+                    {
+                      "Name": "customupnsuffix",
+                      "Value": "[parameters('entraIdPrimaryOrCustomDomainName')]",
+                      "TypeName": "System.Object"
+                    },
+                    {
+                      "Name": "AdminCreds",
+                      "Value": {
+                        "UserName": "[parameters('adminUsername')]",
+                        "Password": "PrivateSettingsRef:AdminPassword"
+                      },
+                      "TypeName": "System.Management.Automation.PSCredential"
+                    },
+                    {
+                      "Name": "usersArray",
+                      "Value": "[parameters('usersArray')]",
+                      "TypeName": "System.Object"
+                    },
+                    {
+                      "Name": "UserCreds",
+                      "Value": {
+                        "UserName": "user",
+                        "Password": "PrivateSettingsRef:UserPassword"
+                      },
+                      "TypeName": "System.Management.Automation.PSCredential"
+                    }
+                  ]
+                },
+                "protectedSettings": {
+                  "Items": {
+                    "AdminPassword": "[parameters('adminPassword')]",
+                    "UserPassword": "[parameters('defaultUserPassword')]"
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('adVMName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix')))]",
+        "rgs"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('Private-Dns-Zone-Names-{0}', variables('deploymentSuffix'))]",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "locations": {
+            "value": "[variables('locations')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "9272367148237058468"
+            }
+          },
+          "parameters": {
+            "locations": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "privateDnsZoneNames_Backup",
+                "count": "[length(items(parameters('locations')))]",
+                "input": "[format('privatelink.{0}.backup.windowsazure.{1}', items(parameters('locations'))[copyIndex('privateDnsZoneNames_Backup')].value.recoveryServicesGeo, coalesce(variables('privateDnsZoneSuffixes_Backup')[environment().name], variables('cloudSuffix')))]"
+              }
+            ],
+            "cloudSuffix": "[replace(replace(environment().resourceManager, 'https://management.', ''), '/', '')]",
+            "privateDnsZoneNames": "[union(createArray(format('privatelink.agentsvc.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix'))), format('privatelink.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix'))), format('privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix')))), format('scm.privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix')))), format('privatelink.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix'))), format('privatelink-global.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix'))), format('privatelink.file.{0}', environment().suffixes.storage), format('privatelink.queue.{0}', environment().suffixes.storage), format('privatelink.table.{0}', environment().suffixes.storage), format('privatelink.blob.{0}', environment().suffixes.storage), format('privatelink{0}', replace(environment().suffixes.keyvaultDns, 'vault', 'vaultcore')), format('privatelink.monitor.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix'))), format('privatelink.ods.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix'))), format('privatelink.oms.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))), variables('privateDnsZoneNames_Backup'))]",
+            "privateDnsZoneSuffixes_AzureAutomation": {
+              "AzureCloud": "net",
+              "AzureUSGovernment": "us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_AzureVirtualDesktop": {
+              "AzureCloud": "microsoft.com",
+              "AzureUSGovernment": "azure.us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_AzureWebSites": {
+              "AzureCloud": "azurewebsites.net",
+              "AzureUSGovernment": "azurewebsites.us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_Backup": {
+              "AzureCloud": "com",
+              "AzureUSGovernment": "us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_Monitor": {
+              "AzureCloud": "azure.com",
+              "AzureUSGovernment": "azure.us",
+              "USNat": null,
+              "USSec": null
+            }
+          },
+          "resources": [],
+          "outputs": {
+            "zoneNames": {
+              "type": "array",
+              "value": "[variables('privateDnsZoneNames')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('Private-DNS-Zones-{0}', variables('deploymentSuffix'))]",
+      "resourceGroup": "[variables('resourceGroups')[1]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "privateDnsZoneNames": {
+            "value": "[reference(subscriptionResourceId('Microsoft.Resources/deployments', format('Private-Dns-Zone-Names-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.zoneNames.value]"
+          },
+          "tags": {
+            "value": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/privateDnsZones'), createObject())]"
+          },
+          "vnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "5106949064941428317"
+            }
+          },
+          "parameters": {
+            "privateDnsZoneNames": {
+              "type": "array"
+            },
+            "vnetId": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "copy": {
+                "name": "privateDnsZones",
+                "count": "[length(parameters('privateDnsZoneNames'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "[parameters('privateDnsZoneNames')[copyIndex()]]",
+              "location": "global",
+              "tags": "[coalesce(tryGet(parameters('tags'), 'Microsoft.Network/privateDnsZones'), createObject())]"
+            },
+            {
+              "copy": {
+                "name": "virtualNetworkLinks",
+                "count": "[length(parameters('privateDnsZoneNames'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2018-09-01",
+              "name": "[format('{0}/{1}', parameters('privateDnsZoneNames')[copyIndex()], last(split(parameters('vnetId'), '/')))]",
+              "location": "global",
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[parameters('vnetId')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneNames')[copyIndex()])]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "[subscriptionResourceId('Microsoft.Resources/deployments', format('Private-Dns-Zone-Names-{0}', variables('deploymentSuffix')))]",
+        "rgs"
+      ]
+    }
+  ]
+}
