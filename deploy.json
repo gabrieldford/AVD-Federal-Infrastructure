@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "7395367058011176652"
+      "templateHash": "2550003430952877347"
     }
   },
   "parameters": {
@@ -711,7 +711,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "14859779172962945558"
+              "templateHash": "8114952571359724061"
             }
           },
           "parameters": {
@@ -856,7 +856,7 @@
                     "action": {
                       "type": "Allow"
                     },
-                    "name": "NetworkRules_AVD-Core",
+                    "name": "NetworkRules-AVD-Core",
                     "priority": 10100,
                     "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
                     "rules": [
@@ -1063,7 +1063,7 @@
                 "priority": 11000,
                 "ruleCollections": [
                   {
-                    "name": "NetworkRules_AVD-Optional",
+                    "name": "NetworkRules-AVD-Optional",
                     "action": {
                       "type": "Allow"
                     },
@@ -1158,7 +1158,7 @@
                     ]
                   },
                   {
-                    "name": "ApplicationRules_AVD-Optional",
+                    "name": "ApplicationRules-AVD-Optional",
                     "action": {
                       "type": "Allow"
                     },
@@ -1294,7 +1294,7 @@
                     "action": {
                       "type": "Allow"
                     },
-                    "name": "NetworkRules_AllowBastionToDC",
+                    "name": "NetworkRules-AllowBastionToDC",
                     "priority": 5100,
                     "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
                     "rules": [
@@ -1318,7 +1318,7 @@
                     "action": {
                       "type": "Allow"
                     },
-                    "name": "NetworkRules_AllowAVDToDC",
+                    "name": "NetworkRules-AllowAVDToDC",
                     "priority": 5200,
                     "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
                     "rules": [
@@ -1373,13 +1373,28 @@
                 "priority": 6000,
                 "ruleCollections": [
                   {
-                    "name": "NetworkRules_ADDS-Optional",
+                    "name": "NetworkRules-ADDS-Optional",
                     "action": {
                       "type": "Allow"
                     },
                     "priority": 6100,
                     "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
                     "rules": [
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "DNS Resolution",
+                        "ipProtocols": [
+                          "TCP",
+                          "UDP"
+                        ],
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationAddresses": [
+                          "*"
+                        ],
+                        "destinationPorts": [
+                          "53"
+                        ]
+                      },
                       {
                         "ruleType": "NetworkRule",
                         "name": "NTP",
@@ -1412,7 +1427,7 @@
                     ]
                   },
                   {
-                    "name": "ApplicationRules_DCsToInternet",
+                    "name": "ApplicationRules-ADDS-Optional",
                     "action": {
                       "type": "Allow"
                     },

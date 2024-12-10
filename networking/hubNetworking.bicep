@@ -101,7 +101,7 @@ resource ruleCollectionGroup_AVDCore 'Microsoft.Network/firewallPolicies/ruleCol
         action: {
           type: 'Allow'
         }
-        name: 'NetworkRules_AVD-Core'
+        name: 'NetworkRules-AVD-Core'
         priority: 10100
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
@@ -305,7 +305,7 @@ resource ruleCollectionGroup_AVDOptional 'Microsoft.Network/firewallPolicies/rul
     priority: 11000
     ruleCollections: [
       {
-        name: 'NetworkRules_AVD-Optional'
+        name: 'NetworkRules-AVD-Optional'
         action: {
           type: 'Allow'
         }
@@ -400,7 +400,7 @@ resource ruleCollectionGroup_AVDOptional 'Microsoft.Network/firewallPolicies/rul
         ]
       }
       {
-        name: 'ApplicationRules_AVD-Optional'
+        name: 'ApplicationRules-AVD-Optional'
         action: {
           type: 'Allow'
         }
@@ -535,7 +535,7 @@ resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCo
         action: {
           type: 'Allow'
         }
-        name: 'NetworkRules_AllowBastionToDC'
+        name: 'NetworkRules-AllowBastionToDC'
         priority: 5100
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
@@ -557,7 +557,7 @@ resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCo
         action: {
           type: 'Allow'
         }
-        name: 'NetworkRules_AllowAVDToDC'
+        name: 'NetworkRules-AllowAVDToDC'
         priority: 5200
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
@@ -611,13 +611,28 @@ resource ruleCollectionGroup_ADDSOptional 'Microsoft.Network/firewallPolicies/ru
     priority: 6000
     ruleCollections: [
       {
-        name: 'NetworkRules_ADDS-Optional'
+        name: 'NetworkRules-ADDS-Optional'
         action: {
           type: 'Allow'
         }
         priority: 6100
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
+          {
+            ruleType: 'NetworkRule'
+            name: 'DNS Resolution'
+            ipProtocols: [
+              'TCP'
+              'UDP'
+            ]
+            sourceAddresses: addsSubnetAddresses
+            destinationAddresses: [
+              '*'
+            ]
+            destinationPorts: [
+              '53'
+            ]
+          }  
           {
             ruleType: 'NetworkRule'
             name: 'NTP'
@@ -650,7 +665,7 @@ resource ruleCollectionGroup_ADDSOptional 'Microsoft.Network/firewallPolicies/ru
         ]
       }      
       {
-        name: 'ApplicationRules_DCsToInternet'
+        name: 'ApplicationRules-ADDS-Optional'
         action: {
           type: 'Allow'
         }
