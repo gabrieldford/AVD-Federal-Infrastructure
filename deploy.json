@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "910338844177191962"
+      "templateHash": "14143333134560914399"
     }
   },
   "parameters": {
@@ -15,7 +15,7 @@
     },
     "assetLocation": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/master/AAD-Hybrid-Lab/",
+      "defaultValue": "https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/refs/heads/main/domainController/DSC/adDSC.zip",
       "metadata": {
         "description": "This is the location in which all the linked templates are stored."
       }

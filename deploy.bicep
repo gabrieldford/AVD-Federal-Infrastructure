@@ -3,7 +3,7 @@ targetScope = 'subscription'
 param location string = deployment().location
 
 @description('This is the location in which all the linked templates are stored.')
-param assetLocation string = 'https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/master/AAD-Hybrid-Lab/'
+param assetLocation string = 'https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/refs/heads/main/domainController/DSC/adDSC.zip'
 
 @description('Username to set for the local User. Cannot be "Administrator", "root" and possibly other such common account names. ')
 param adminUsername string = 'ADAdmin'
