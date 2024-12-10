@@ -91,9 +91,184 @@ resource firewallPolicy 'Microsoft.Network/firewallPolicies@2023-02-01' = {
   tags: tagsByResourceType[?'Microsoft.Network/firewallPolicies'] ?? {}
 }
 
-resource ruleCollectionGroup_AVDCore 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+resource ruleCollectionGroup_ADDS_Inbound 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+  name: 'ADDS-Inbound'
   parent: firewallPolicy
-  name: 'AVD-Core'
+  properties: {
+    priority: 5000
+    ruleCollections: [
+      {
+        action: {
+          type: 'Allow'
+        }
+        name: 'NetworkRules-AllowBastionToDC'
+        priority: 5100
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        rules: [
+          {
+            name: 'Bastion To DC RDP'
+            ruleType: 'NetworkRule'
+            sourceAddresses: [
+              bastionSubnetPrefix
+            ]
+            destinationAddresses: addsSubnetAddresses
+            destinationPorts: [
+              '3389'
+            ]
+            ipProtocols: [
+              'TCP'
+            ]
+          }          
+        ]
+      }
+      {
+        action: {
+          type: 'Allow'
+        }
+        name: 'NetworkRules-AllowAVDToDC'
+        priority: 5200
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        rules: [
+          {
+            name: 'AVD Subnet to DC Subnet TCP'
+            ruleType: 'NetworkRule'
+            sourceAddresses: avdSubnetAddresses
+            destinationAddresses: addsSubnetAddresses
+            destinationPorts: [
+              '88'
+              '123'
+              '135'
+              '389'
+              '445'
+              '636'
+              '3268'
+              '3269'
+              '49152-65535'
+            ]
+            ipProtocols: [
+              'TCP'
+            ]
+          }
+          {
+            name: 'AVD Subnet to DC Subnet UDP'
+            ruleType: 'NetworkRule'
+            sourceAddresses: avdSubnetAddresses
+            destinationAddresses: addsSubnetAddresses
+            destinationPorts: [
+              '88' // Kerberos
+              '389' // LDAP
+            ]
+            ipProtocols: [
+              'UDP'
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+
+resource ruleCollectionGroup_ADDS_Outbound 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+  name: 'ADDS-Outbound'
+  parent: firewallPolicy
+  properties: {
+    priority: 6000
+    ruleCollections: [
+      {
+        name: 'NetworkRules-ADDS-Outbound'
+        action: {
+          type: 'Allow'
+        }
+        priority: 6100
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        rules: [
+          {
+            ruleType: 'NetworkRule'
+            name: 'DNS Resolution'
+            ipProtocols: [
+              'TCP'
+              'UDP'
+            ]
+            sourceAddresses: addsSubnetAddresses
+            destinationAddresses: [
+              '*'
+            ]
+            destinationPorts: [
+              '53'
+            ]
+          }  
+          {
+            ruleType: 'NetworkRule'
+            name: 'NTP'
+            ipProtocols: [
+              'TCP'
+              'UDP'
+            ]
+            sourceAddresses: avdSubnetAddresses
+            destinationFqdns: [
+              'time.windows.com'
+            ]
+            destinationPorts: [
+              '123'
+            ]
+          }          
+          {
+            ruleType: 'NetworkRule'
+            name: 'DetectOSconnectedToInternet'
+            ipProtocols: [
+              'TCP'
+            ]
+            sourceAddresses: avdSubnetAddresses
+            destinationFqdns: [
+              'www.msftconnecttest.com'
+            ]
+            destinationPorts: [
+              '443'
+            ]
+          }
+        ]
+      }      
+      {
+        name: 'ApplicationRules-ADDS-Outbound'
+        action: {
+          type: 'Allow'
+        }
+        priority: 6200
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        rules: [
+          {
+            ruleType: 'ApplicationRule'
+            name: 'Allow all http-https traffic'
+            protocols: [
+              {
+                protocolType: 'Http'
+                port: 80
+              }
+              {
+                protocolType: 'Https'
+                port: 443
+              }
+            ]
+            targetFqdns: [
+              '*'
+            ]
+            terminateTLS: false
+            sourceAddresses: addsSubnetAddresses
+            destinationAddresses: []
+            sourceIpGroups: []
+          }          
+        ]
+      }
+    ]
+  }
+  dependsOn: [
+    ruleCollectionGroup_ADDS_Inbound
+  ]
+}
+
+resource ruleCollectionGroup_AVD_Outbound 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+  parent: firewallPolicy
+  name: 'AVD-Outbound'
   properties: {
     priority: 10000
     ruleCollections: [
@@ -101,7 +276,7 @@ resource ruleCollectionGroup_AVDCore 'Microsoft.Network/firewallPolicies/ruleCol
         action: {
           type: 'Allow'
         }
-        name: 'NetworkRules-AVD-Core'
+        name: 'NetworkRules-AVD-Outbound'
         priority: 10100
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
@@ -292,26 +467,6 @@ resource ruleCollectionGroup_AVDCore 'Microsoft.Network/firewallPolicies/ruleCol
               '443'
             ]
           }
-        ]
-      }
-    ]
-  }
-}
-
-resource ruleCollectionGroup_AVDOptional 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
-  parent: firewallPolicy
-  name: 'AVD-Optional'
-  properties: {
-    priority: 11000
-    ruleCollections: [
-      {
-        name: 'NetworkRules-AVD-Optional'
-        action: {
-          type: 'Allow'
-        }
-        priority: 11100
-        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
-        rules: [
           {
             ruleType: 'NetworkRule'
             name: 'NTP'
@@ -400,7 +555,7 @@ resource ruleCollectionGroup_AVDOptional 'Microsoft.Network/firewallPolicies/rul
         ]
       }
       {
-        name: 'ApplicationRules-AVD-Optional'
+        name: 'ApplicationRules-AVD-Outbound'
         action: {
           type: 'Allow'
         }
@@ -516,165 +671,9 @@ resource ruleCollectionGroup_AVDOptional 'Microsoft.Network/firewallPolicies/rul
             destinationAddresses: []
             sourceIpGroups: []
           }
-        ]
-      }
-    ]
-  }
-  dependsOn: [
-    ruleCollectionGroup_AVDCore
-  ]
-}
-
-resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
-  name: 'ADDS-Core'
-  parent: firewallPolicy
-  properties: {
-    priority: 5000
-    ruleCollections: [
-      {
-        action: {
-          type: 'Allow'
-        }
-        name: 'NetworkRules-AllowBastionToDC'
-        priority: 5100
-        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
-        rules: [
-          {
-            name: 'Bastion To DC RDP'
-            ruleType: 'NetworkRule'
-            sourceAddresses: [bastionSubnetPrefix]
-            destinationAddresses: addsSubnetAddresses
-            destinationPorts: [
-              '3389'
-            ]
-            ipProtocols: [
-              'TCP'
-            ]
-          }          
-        ]
-      }
-      {
-        action: {
-          type: 'Allow'
-        }
-        name: 'NetworkRules-AllowAVDToDC'
-        priority: 5200
-        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
-        rules: [
-          {
-            name: 'AVD Subnet to DC Subnet TCP'
-            ruleType: 'NetworkRule'
-            sourceAddresses: avdSubnetAddresses
-            destinationAddresses: addsSubnetAddresses
-            destinationPorts: [
-              '88'
-              '123'
-              '135'
-              '389'
-              '445'
-              '636'
-              '3268'
-              '3269'
-              '49152-65535'
-            ]
-            ipProtocols: [
-              'TCP'
-            ]
-          }
-          {
-            name: 'AVD Subnet to DC Subnet UDP'
-            ruleType: 'NetworkRule'
-            sourceAddresses: avdSubnetAddresses
-            destinationAddresses: addsSubnetAddresses
-            destinationPorts: [
-              '88' // Kerberos
-              '389' // LDAP
-            ]
-            ipProtocols: [
-              'UDP'
-            ]
-          }
-        ]
-      }
-    ]
-  }
-  dependsOn: [
-    ruleCollectionGroup_AVDCore
-    ruleCollectionGroup_AVDOptional
-  ]
-}
-
-resource ruleCollectionGroup_ADDSOptional 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
-  name: 'ADDS-Optional'
-  parent: firewallPolicy
-  properties: {
-    priority: 6000
-    ruleCollections: [
-      {
-        name: 'NetworkRules-ADDS-Optional'
-        action: {
-          type: 'Allow'
-        }
-        priority: 6100
-        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
-        rules: [
-          {
-            ruleType: 'NetworkRule'
-            name: 'DNS Resolution'
-            ipProtocols: [
-              'TCP'
-              'UDP'
-            ]
-            sourceAddresses: addsSubnetAddresses
-            destinationAddresses: [
-              '*'
-            ]
-            destinationPorts: [
-              '53'
-            ]
-          }  
-          {
-            ruleType: 'NetworkRule'
-            name: 'NTP'
-            ipProtocols: [
-              'TCP'
-              'UDP'
-            ]
-            sourceAddresses: avdSubnetAddresses
-            destinationFqdns: [
-              'time.windows.com'
-            ]
-            destinationPorts: [
-              '123'
-            ]
-          }          
-          {
-            ruleType: 'NetworkRule'
-            name: 'DetectOSconnectedToInternet'
-            ipProtocols: [
-              'TCP'
-            ]
-            sourceAddresses: avdSubnetAddresses
-            destinationFqdns: [
-              'www.msftconnecttest.com'
-            ]
-            destinationPorts: [
-              '443'
-            ]
-          }
-        ]
-      }      
-      {
-        name: 'ApplicationRules-ADDS-Optional'
-        action: {
-          type: 'Allow'
-        }
-        priority: 6200
-        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
-        rules: [
           {
             ruleType: 'ApplicationRule'
-            name: 'Allow all web traffic'
+            name: 'Allow all http-https traffic'
             protocols: [
               {
                 protocolType: 'Http'
@@ -692,18 +691,16 @@ resource ruleCollectionGroup_ADDSOptional 'Microsoft.Network/firewallPolicies/ru
             sourceAddresses: addsSubnetAddresses
             destinationAddresses: []
             sourceIpGroups: []
-          }          
+          }    
         ]
       }
     ]
   }
   dependsOn: [
-    ruleCollectionGroup_AVDCore
-    ruleCollectionGroup_AVDOptional
-    ruleCollectionGroup_ADDSCore
+    ruleCollectionGroup_ADDS_Inbound
+    ruleCollectionGroup_ADDS_Outbound
   ]
 }
-
 
 resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
   name: firewallName
@@ -732,10 +729,9 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
   tags: tagsByResourceType[?'Microsoft.Network/azureFirewalls'] ?? {}
   zones: empty(availabilityZones) ? null : availabilityZones
   dependsOn: [
-    ruleCollectionGroup_ADDSCore
-    ruleCollectionGroup_AVDCore
-    ruleCollectionGroup_AVDOptional
-    ruleCollectionGroup_ADDSOptional
+    ruleCollectionGroup_ADDS_Inbound
+    ruleCollectionGroup_ADDS_Outbound
+    ruleCollectionGroup_AVD_Outbound
   ]
 }
 

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "2550003430952877347"
+      "templateHash": "7656744683577264829"
     }
   },
   "parameters": {
@@ -711,7 +711,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "8114952571359724061"
+              "templateHash": "14799893597759813108"
             }
           },
           "parameters": {
@@ -848,7 +848,186 @@
             {
               "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
               "apiVersion": "2024-03-01",
-              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'AVD-Core')]",
+              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'ADDS-Inbound')]",
+              "properties": {
+                "priority": 5000,
+                "ruleCollections": [
+                  {
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "name": "NetworkRules-AllowBastionToDC",
+                    "priority": 5100,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "name": "Bastion To DC RDP",
+                        "ruleType": "NetworkRule",
+                        "sourceAddresses": [
+                          "[parameters('bastionSubnetPrefix')]"
+                        ],
+                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationPorts": [
+                          "3389"
+                        ],
+                        "ipProtocols": [
+                          "TCP"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "name": "NetworkRules-AllowAVDToDC",
+                    "priority": 5200,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "name": "AVD Subnet to DC Subnet TCP",
+                        "ruleType": "NetworkRule",
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationPorts": [
+                          "88",
+                          "123",
+                          "135",
+                          "389",
+                          "445",
+                          "636",
+                          "3268",
+                          "3269",
+                          "49152-65535"
+                        ],
+                        "ipProtocols": [
+                          "TCP"
+                        ]
+                      },
+                      {
+                        "name": "AVD Subnet to DC Subnet UDP",
+                        "ruleType": "NetworkRule",
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationPorts": [
+                          "88",
+                          "389"
+                        ],
+                        "ipProtocols": [
+                          "UDP"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'ADDS-Outbound')]",
+              "properties": {
+                "priority": 6000,
+                "ruleCollections": [
+                  {
+                    "name": "NetworkRules-ADDS-Outbound",
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "priority": 6100,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "DNS Resolution",
+                        "ipProtocols": [
+                          "TCP",
+                          "UDP"
+                        ],
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationAddresses": [
+                          "*"
+                        ],
+                        "destinationPorts": [
+                          "53"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "NTP",
+                        "ipProtocols": [
+                          "TCP",
+                          "UDP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationFqdns": [
+                          "time.windows.com"
+                        ],
+                        "destinationPorts": [
+                          "123"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "DetectOSconnectedToInternet",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationFqdns": [
+                          "www.msftconnecttest.com"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "ApplicationRules-ADDS-Outbound",
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "priority": 6200,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "ruleType": "ApplicationRule",
+                        "name": "Allow all http-https traffic",
+                        "protocols": [
+                          {
+                            "protocolType": "Http",
+                            "port": 80
+                          },
+                          {
+                            "protocolType": "Https",
+                            "port": 443
+                          }
+                        ],
+                        "targetFqdns": [
+                          "*"
+                        ],
+                        "terminateTLS": false,
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
+                        "destinationAddresses": [],
+                        "sourceIpGroups": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Inbound')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'AVD-Outbound')]",
               "properties": {
                 "priority": 10000,
                 "ruleCollections": [
@@ -856,7 +1035,7 @@
                     "action": {
                       "type": "Allow"
                     },
-                    "name": "NetworkRules-AVD-Core",
+                    "name": "NetworkRules-AVD-Outbound",
                     "priority": 10100,
                     "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
                     "rules": [
@@ -1046,30 +1225,7 @@
                         "destinationPorts": [
                           "443"
                         ]
-                      }
-                    ]
-                  }
-                ]
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
-              ]
-            },
-            {
-              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
-              "apiVersion": "2024-03-01",
-              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'AVD-Optional')]",
-              "properties": {
-                "priority": 11000,
-                "ruleCollections": [
-                  {
-                    "name": "NetworkRules-AVD-Optional",
-                    "action": {
-                      "type": "Allow"
-                    },
-                    "priority": 11100,
-                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
-                    "rules": [
+                      },
                       {
                         "ruleType": "NetworkRule",
                         "name": "NTP",
@@ -1158,7 +1314,7 @@
                     ]
                   },
                   {
-                    "name": "ApplicationRules-AVD-Optional",
+                    "name": "ApplicationRules-AVD-Outbound",
                     "action": {
                       "type": "Allow"
                     },
@@ -1273,170 +1429,10 @@
                         "sourceAddresses": "[parameters('avdSubnetAddresses')]",
                         "destinationAddresses": [],
                         "sourceIpGroups": []
-                      }
-                    ]
-                  }
-                ]
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]"
-              ]
-            },
-            {
-              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
-              "apiVersion": "2024-03-01",
-              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'ADDS-Core')]",
-              "properties": {
-                "priority": 5000,
-                "ruleCollections": [
-                  {
-                    "action": {
-                      "type": "Allow"
-                    },
-                    "name": "NetworkRules-AllowBastionToDC",
-                    "priority": 5100,
-                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
-                    "rules": [
-                      {
-                        "name": "Bastion To DC RDP",
-                        "ruleType": "NetworkRule",
-                        "sourceAddresses": [
-                          "[parameters('bastionSubnetPrefix')]"
-                        ],
-                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
-                        "destinationPorts": [
-                          "3389"
-                        ],
-                        "ipProtocols": [
-                          "TCP"
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "action": {
-                      "type": "Allow"
-                    },
-                    "name": "NetworkRules-AllowAVDToDC",
-                    "priority": 5200,
-                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
-                    "rules": [
-                      {
-                        "name": "AVD Subnet to DC Subnet TCP",
-                        "ruleType": "NetworkRule",
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
-                        "destinationPorts": [
-                          "88",
-                          "123",
-                          "135",
-                          "389",
-                          "445",
-                          "636",
-                          "3268",
-                          "3269",
-                          "49152-65535"
-                        ],
-                        "ipProtocols": [
-                          "TCP"
-                        ]
                       },
-                      {
-                        "name": "AVD Subnet to DC Subnet UDP",
-                        "ruleType": "NetworkRule",
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "destinationAddresses": "[parameters('addsSubnetAddresses')]",
-                        "destinationPorts": [
-                          "88",
-                          "389"
-                        ],
-                        "ipProtocols": [
-                          "UDP"
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]"
-              ]
-            },
-            {
-              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
-              "apiVersion": "2024-03-01",
-              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'ADDS-Optional')]",
-              "properties": {
-                "priority": 6000,
-                "ruleCollections": [
-                  {
-                    "name": "NetworkRules-ADDS-Optional",
-                    "action": {
-                      "type": "Allow"
-                    },
-                    "priority": 6100,
-                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
-                    "rules": [
-                      {
-                        "ruleType": "NetworkRule",
-                        "name": "DNS Resolution",
-                        "ipProtocols": [
-                          "TCP",
-                          "UDP"
-                        ],
-                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
-                        "destinationAddresses": [
-                          "*"
-                        ],
-                        "destinationPorts": [
-                          "53"
-                        ]
-                      },
-                      {
-                        "ruleType": "NetworkRule",
-                        "name": "NTP",
-                        "ipProtocols": [
-                          "TCP",
-                          "UDP"
-                        ],
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "destinationFqdns": [
-                          "time.windows.com"
-                        ],
-                        "destinationPorts": [
-                          "123"
-                        ]
-                      },
-                      {
-                        "ruleType": "NetworkRule",
-                        "name": "DetectOSconnectedToInternet",
-                        "ipProtocols": [
-                          "TCP"
-                        ],
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
-                        "destinationFqdns": [
-                          "www.msftconnecttest.com"
-                        ],
-                        "destinationPorts": [
-                          "443"
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "name": "ApplicationRules-ADDS-Optional",
-                    "action": {
-                      "type": "Allow"
-                    },
-                    "priority": 6200,
-                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
-                    "rules": [
                       {
                         "ruleType": "ApplicationRule",
-                        "name": "Allow all web traffic",
+                        "name": "Allow all http-https traffic",
                         "protocols": [
                           {
                             "protocolType": "Http",
@@ -1461,9 +1457,8 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Core')]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]"
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Inbound')]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Outbound')]"
               ]
             },
             {
@@ -1497,10 +1492,9 @@
               "dependsOn": [
                 "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
                 "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Core')]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Optional')]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]",
-                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Inbound')]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Outbound')]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Outbound')]",
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
               ]
             },
