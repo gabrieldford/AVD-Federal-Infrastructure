@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "6153699497437051891"
+      "templateHash": "6217652274005672884"
     }
   },
   "parameters": {
@@ -708,7 +708,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "3333241289298018652"
+              "templateHash": "17600326756165637909"
             }
           },
           "parameters": {
@@ -1400,83 +1400,89 @@
                         ]
                       }
                     ]
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/firewallPolicies/ruleCollectionGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('firewallPolicyName'), 'ADDS-Optional')]",
+              "properties": {
+                "priority": 6000,
+                "ruleCollections": [
+                  {
+                    "name": "NetworkRules_ADDS-Optional",
+                    "action": {
+                      "type": "Allow"
+                    },
+                    "priority": 6100,
+                    "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
+                    "rules": [
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "NTP",
+                        "ipProtocols": [
+                          "TCP",
+                          "UDP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationFqdns": [
+                          "time.windows.com"
+                        ],
+                        "destinationPorts": [
+                          "123"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "DetectOSconnectedToInternet",
+                        "ipProtocols": [
+                          "TCP"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "destinationFqdns": [
+                          "www.msftconnecttest.com"
+                        ],
+                        "destinationPorts": [
+                          "443"
+                        ]
+                      }
+                    ]
                   },
                   {
                     "name": "ApplicationRules_DCsToInternet",
                     "action": {
                       "type": "Allow"
                     },
-                    "priority": 5300,
+                    "priority": 6200,
                     "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
                     "rules": [
                       {
                         "ruleType": "ApplicationRule",
-                        "name": "WindowsUpdate",
+                        "name": "Allow all web traffic",
                         "protocols": [
+                          {
+                            "protocolType": "Http",
+                            "port": 80
+                          },
                           {
                             "protocolType": "Https",
                             "port": 443
                           }
                         ],
-                        "fqdnTags": [
-                          "WindowsUpdate"
+                        "targetFqdns": [
+                          "*"
                         ],
                         "terminateTLS": false,
                         "sourceAddresses": "[parameters('addsSubnetAddresses')]",
                         "destinationAddresses": [],
                         "sourceIpGroups": []
-                      },
-                      {
-                        "name": "DCs to Azure Auth",
-                        "ruleType": "ApplicationRule",
-                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
-                        "targetFqdns": [
-                          "[replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')]",
-                          "[replace(replace(environment().authentication.audiences[0], 'https://', ''), '/', '')]",
-                          "[replace(replace(environment().authentication.audiences[1], 'https://', ''), '/', '')]",
-                          "[replace(replace(environment().graph, 'https://', ''), '/', '')]"
-                        ],
-                        "protocols": [
-                          {
-                            "protocolType": "Http"
-                          },
-                          {
-                            "protocolType": "Https"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "DC to Github",
-                        "ruleType": "ApplicationRule",
-                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
-                        "targetFqdns": [
-                          "*.github.com",
-                          "*.githubusercontent.com"
-                        ],
-                        "protocols": [
-                          {
-                            "protocolType": "Http"
-                          },
-                          {
-                            "protocolType": "Https"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "DC to PowerShell Gallery",
-                        "ruleType": "ApplicationRule",
-                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
-                        "targetFqdns": [
-                          "*.powershellgallery.com"
-                        ],
-                        "protocols": [
-                          {
-                            "protocolType": "Http"
-                          },
-                          {
-                            "protocolType": "Https"
-                          }
-                        ]
                       }
                     ]
                   }
@@ -1484,6 +1490,7 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Core')]",
                 "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]",
                 "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]"
               ]
@@ -1520,6 +1527,7 @@
                 "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
                 "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]",
                 "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Core')]",
+                "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'ADDS-Optional')]",
                 "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Core')]",
                 "[resourceId('Microsoft.Network/firewallPolicies/ruleCollectionGroups', parameters('firewallPolicyName'), 'AVD-Optional')]",
                 "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"

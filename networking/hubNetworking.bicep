@@ -597,15 +597,15 @@ resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCo
             sourceAddresses: avdSubnetAddresses
             destinationAddresses: addsSubnetAddresses
             destinationPorts: [
-              '88' // Kerberos
-              '123' // NTP
-              '135' // RPC Endpoint Mapper
-              '389' // LDAP
-              '445' // SMB
-              '636' // LDAPS
-              '3268' // Global Catalog
-              '3269' // Global Catalog SSL
-              '49152-65535' // RPC Dynamic Ports
+              '88'
+              '123'
+              '135'
+              '389'
+              '445'
+              '636'
+              '3268'
+              '3269'
+              '49152-65535'
             ]
             ipProtocols: [
               'TCP'
@@ -626,85 +626,6 @@ resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCo
           }
         ]
       }
-      {
-        name: 'ApplicationRules_DCsToInternet'
-        action: {
-          type: 'Allow'
-        }
-        priority: 5300
-        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
-        rules: [
-          {
-            ruleType: 'ApplicationRule'
-            name: 'WindowsUpdate'
-            protocols: [
-              {
-                protocolType: 'Https'
-                port: 443
-              }
-            ]
-            fqdnTags: [
-              'WindowsUpdate'
-            ]
-            terminateTLS: false
-            sourceAddresses: addsSubnetAddresses
-            destinationAddresses: []
-            sourceIpGroups: []
-          }
-          {
-            name: 'DCs to Azure Auth'
-            ruleType: 'ApplicationRule'
-            sourceAddresses: addsSubnetAddresses
-            targetFqdns: [
-              replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')
-              replace(replace(environment().authentication.audiences[0], 'https://', ''), '/', '')
-              replace(replace(environment().authentication.audiences[1], 'https://', ''), '/', '')
-              replace(replace(environment().graph, 'https://', ''), '/', '')
-            ]
-            protocols: [
-              {
-                protocolType: 'Http'
-              }
-              {
-                protocolType: 'Https'
-              }
-            ]
-          }
-          {
-            name: 'DC to Github'
-            ruleType: 'ApplicationRule'
-            sourceAddresses: addsSubnetAddresses
-            targetFqdns: [
-              '*.github.com'
-              '*.githubusercontent.com'
-            ]
-            protocols: [
-              {
-                protocolType: 'Http'
-              }
-              {
-                protocolType: 'Https'
-              }
-            ]
-          }
-          {
-            name: 'DC to PowerShell Gallery'
-            ruleType: 'ApplicationRule'
-            sourceAddresses: addsSubnetAddresses
-            targetFqdns: [
-              '*.powershellgallery.com'
-            ]
-            protocols: [
-              {
-                protocolType: 'Http'
-              }
-              {
-                protocolType: 'Https'
-              }
-            ]
-          }
-        ]
-      }
     ]
   }
   dependsOn: [
@@ -712,6 +633,92 @@ resource ruleCollectionGroup_ADDSCore 'Microsoft.Network/firewallPolicies/ruleCo
     ruleCollectionGroup_AVDOptional
   ]
 }
+
+resource ruleCollectionGroup_ADDSOptional 'Microsoft.Network/firewallPolicies/ruleCollectionGroups@2024-03-01' = {
+  name: 'ADDS-Optional'
+  parent: firewallPolicy
+  properties: {
+    priority: 6000
+    ruleCollections: [
+      {
+        name: 'NetworkRules_ADDS-Optional'
+        action: {
+          type: 'Allow'
+        }
+        priority: 6100
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        rules: [
+          {
+            ruleType: 'NetworkRule'
+            name: 'NTP'
+            ipProtocols: [
+              'TCP'
+              'UDP'
+            ]
+            sourceAddresses: avdSubnetAddresses
+            destinationFqdns: [
+              'time.windows.com'
+            ]
+            destinationPorts: [
+              '123'
+            ]
+          }          
+          {
+            ruleType: 'NetworkRule'
+            name: 'DetectOSconnectedToInternet'
+            ipProtocols: [
+              'TCP'
+            ]
+            sourceAddresses: avdSubnetAddresses
+            destinationFqdns: [
+              'www.msftconnecttest.com'
+            ]
+            destinationPorts: [
+              '443'
+            ]
+          }
+        ]
+      }      
+      {
+        name: 'ApplicationRules_DCsToInternet'
+        action: {
+          type: 'Allow'
+        }
+        priority: 6200
+        ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
+        rules: [
+          {
+            ruleType: 'ApplicationRule'
+            name: 'Allow all web traffic'
+            protocols: [
+              {
+                protocolType: 'Http'
+                port: 80
+              }
+              {
+                protocolType: 'Https'
+                port: 443
+              }
+            ]
+            targetFqdns: [
+              '*'
+            ]
+            terminateTLS: false
+            sourceAddresses: addsSubnetAddresses
+            destinationAddresses: []
+            sourceIpGroups: []
+          }          
+        ]
+      }
+    ]
+  }
+  dependsOn: [
+    ruleCollectionGroup_AVDCore
+    ruleCollectionGroup_AVDOptional
+    ruleCollectionGroup_ADDSCore
+  ]
+}
+
 
 resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
   name: firewallName
@@ -743,6 +750,7 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
     ruleCollectionGroup_ADDSCore
     ruleCollectionGroup_AVDCore
     ruleCollectionGroup_AVDOptional
+    ruleCollectionGroup_ADDSOptional
   ]
 }
 
