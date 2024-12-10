@@ -15,6 +15,9 @@ param adminPassword string
 @description('IMPORTANT: Two-part internal AD name - short/NB name will be first part (\'contoso\'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur.')
 param adDomainName string
 
+@description('An array of availability zones to use for firewall deployment. If not provided, firewall will be deployed in a single zone.')
+param availabilityZones array = []
+
 @description('This needs to be specified in order to have a uniform logon experience within AVD')
 param entraIdPrimaryOrCustomDomainName string
 
@@ -318,14 +321,15 @@ module hubNetworking 'networking/hubNetworking.bicep' = {
   scope: resourceGroup(resourceGroups[0])
   name: 'hub-networking-${deploymentSuffix}'
   params: {
+    availabilityZones: availabilityZones
     vnetAddressPrefix: hubVnetAddressPrefix
     addsSubnetAddresses: [addsVnetAddressPrefix]
     avdSubnetAddresses: [avdVnetAddressPrefix]
     bastionName: 'bas-${locations[location].abbreviation}'
-    bastionPublicIpName: 'pip--${locations[location].abbreviation}'
+    bastionPublicIpName: 'pip-bas-${locations[location].abbreviation}'
     firewallName: 'afw-${locations[location].abbreviation}'
     firewallPolicyName: 'afwp-${locations[location].abbreviation}'
-    firewallPublicIpName: 'pip-${locations[location].abbreviation}'
+    firewallPublicIpName: 'pip-afw-${locations[location].abbreviation}'
     vnetName: 'vnet-hub--${locations[location].abbreviation}'
     bastionSubnetPrefix: bastionSubnetPrefix
     firewallSubnetPrefix: firewallSubnetPrefix

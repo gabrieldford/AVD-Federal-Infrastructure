@@ -39,7 +39,7 @@
 									"Microsoft.Resources/resourceGroups"
 								]
 							}
-						},
+						},						
 						{
 							"name": "domainAndTenant",
 							"type": "Microsoft.Common.Section",
@@ -184,6 +184,15 @@
 								"Microsoft.Network/VirtualNetworks",
 								"Microsoft.Compute/VirtualMachines"
 							]
+						},
+						{
+							"name": "resourceSkusApi",
+							"type": "Microsoft.Solutions.ArmApiControl",
+							"condition": "[and(not(empty(steps('basics').scope.subscription)), not(empty(steps('basics').scope.location)))]",
+							"request": {
+								"method": "GET",
+								"path": "[concat(steps('basics').scope.subscription.id, '/providers/Microsoft.Compute/skus?api-version=2021-07-01&$filter=location eq ', decodeUriComponent('%27'), steps('basics').scope.location.name, decodeUriComponent('%27'))]"
+							}
 						}
 					]
 				}
@@ -199,7 +208,8 @@
 				"defaultUserPassword": "[steps('basics').users.defaultUserPassword]",
 				"adDomainName": "[steps('basics').domainAndTenant.adDomainName]",
 				"entraIdPrimaryOrCustomDomainName": "[steps('basics').domainAndTenant.customUpnSuffix]",
-				"vmSize": "[steps('basics').vm.vmSize]"
+				"vmSize": "[steps('basics').vm.vmSize]",
+				"availabilityZones": "[first(map(first(map(filter(steps('tags').resourceSkusApi.value, (sku) => equals(sku.name, steps('basics').vm.vmSize)), (sku) => sku.locationInfo)), (sku) => sku.zones))]"				
 			}
 		}
 	}

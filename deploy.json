@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "9157583399572476052"
+      "templateHash": "15149611571996218980"
     }
   },
   "parameters": {
@@ -37,6 +37,13 @@
       "type": "string",
       "metadata": {
         "description": "IMPORTANT: Two-part internal AD name - short/NB name will be first part ('contoso'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur."
+      }
+    },
+    "availabilityZones": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "An array of availability zones to use for firewall deployment. If not provided, firewall will be deployed in a single zone."
       }
     },
     "entraIdPrimaryOrCustomDomainName": {
@@ -644,6 +651,9 @@
         },
         "mode": "Incremental",
         "parameters": {
+          "availabilityZones": {
+            "value": "[parameters('availabilityZones')]"
+          },
           "vnetAddressPrefix": {
             "value": "[variables('hubVnetAddressPrefix')]"
           },
@@ -661,7 +671,7 @@
             "value": "[format('bas-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
           "bastionPublicIpName": {
-            "value": "[format('pip--{0}', variables('locations')[parameters('location')].abbreviation)]"
+            "value": "[format('pip-bas-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
           "firewallName": {
             "value": "[format('afw-{0}', variables('locations')[parameters('location')].abbreviation)]"
@@ -670,7 +680,7 @@
             "value": "[format('afwp-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
           "firewallPublicIpName": {
-            "value": "[format('pip-{0}', variables('locations')[parameters('location')].abbreviation)]"
+            "value": "[format('pip-afw-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
           "vnetName": {
             "value": "[format('vnet-hub--{0}', variables('locations')[parameters('location')].abbreviation)]"
@@ -698,7 +708,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "5984982083077298302"
+              "templateHash": "6511898092587972964"
             }
           },
           "parameters": {
@@ -712,6 +722,12 @@
               "type": "array",
               "metadata": {
                 "description": "The address Prefixes of the AVD Session Hosts."
+              }
+            },
+            "availabilityZones": {
+              "type": "array",
+              "metadata": {
+                "description": "The availability zones available for the resources."
               }
             },
             "dnsServers": {
@@ -832,18 +848,27 @@
               "apiVersion": "2023-02-01",
               "name": "[parameters('firewallPublicIpName')]",
               "location": "[parameters('location')]",
-              "properties": {
-                "publicIPAllocationMethod": "Static"
+              "sku": {
+                "name": "Standard"
               },
-              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/publicIPAddresses'), createObject())]"
+              "properties": {
+                "publicIPAllocationMethod": "Static",
+                "publicIPAddressVersion": "IPv4"
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/publicIPAddresses'), createObject())]",
+              "zones": "[if(empty(parameters('availabilityZones')), null(), parameters('availabilityZones'))]"
             },
             {
               "type": "Microsoft.Network/publicIPAddresses",
               "apiVersion": "2023-02-01",
               "name": "[parameters('bastionPublicIpName')]",
               "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard"
+              },
               "properties": {
-                "publicIPAllocationMethod": "Static"
+                "publicIPAllocationMethod": "Static",
+                "publicIPAddressVersion": "IPv4"
               },
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/publicIPAddresses'), createObject())]"
             },
@@ -1505,9 +1530,6 @@
                 "sku": {
                   "tier": "Standard"
                 },
-                "networkRuleCollections": [],
-                "applicationRuleCollections": [],
-                "natRuleCollections": [],
                 "firewallPolicy": {
                   "id": "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]"
                 },
@@ -1526,6 +1548,7 @@
                 ]
               },
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/azureFirewalls'), createObject())]",
+              "zones": "[if(empty(parameters('availabilityZones')), null(), parameters('availabilityZones'))]",
               "dependsOn": [
                 "[resourceId('Microsoft.Network/firewallPolicies', parameters('firewallPolicyName'))]",
                 "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]",

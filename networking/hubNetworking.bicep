@@ -4,6 +4,9 @@ param addsSubnetAddresses array
 @description('The address Prefixes of the AVD Session Hosts.')
 param avdSubnetAddresses array
 
+@description('The availability zones available for the resources.')
+param availabilityZones array
+
 @description('The DNS servers to use for the virtual network.')
 param dnsServers array = []
 
@@ -78,17 +81,26 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
 resource firewallPublicIp 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
   name: firewallPublicIpName
   location: location
+  sku: {
+    name: 'Standard'
+  }
   properties: {
     publicIPAllocationMethod: 'Static'
+    publicIPAddressVersion: 'IPv4'
   }
   tags: tagsByResourceType[?'Microsoft.Network/publicIPAddresses'] ?? {}
+  zones: empty(availabilityZones) ? null : availabilityZones
 }
 
 resource bastionPublicIp 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
   name: bastionPublicIpName
   location: location
+  sku: {
+    name: 'Standard'
+  }
   properties: {
     publicIPAllocationMethod: 'Static'
+    publicIPAddressVersion: 'IPv4'
   }
   tags: tagsByResourceType[?'Microsoft.Network/publicIPAddresses'] ?? {}
 }
@@ -737,9 +749,6 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
     sku: {
       tier: 'Standard'
     }
-    networkRuleCollections: []
-    applicationRuleCollections: []
-    natRuleCollections: []
     firewallPolicy: {
       id: firewallPolicy.id
     }
@@ -758,6 +767,7 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
     ]
   }
   tags: tagsByResourceType[?'Microsoft.Network/azureFirewalls'] ?? {}
+  zones: empty(availabilityZones) ? null : availabilityZones
 }
 
 resource azureBastion 'Microsoft.Network/bastionHosts@2023-02-01' = {
