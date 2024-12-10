@@ -304,7 +304,7 @@ resource firewallPolicy_AVDCore_RCG 'Microsoft.Network/firewallPolicies/ruleColl
             destinationAddresses: []
             destinationIpGroups: []
             destinationFqdns: [
-              replace(environment().authentication.loginEndpoint, 'https://', '')
+              replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')
             ]
             destinationPorts: [
               '443'
@@ -692,11 +692,11 @@ resource firewallPolicies_DomainControllers_RCG 'Microsoft.Network/firewallPolic
             ruleType: 'ApplicationRule'
             sourceAddresses: addsSubnetAddresses
             targetFqdns: [
-              replace(environment().resourceManager, 'https://', '')
-              replace(environment().authentication.loginEndpoint, 'https://', '')
-              replace(environment().authentication.audiences[0], 'https://', '')
-              replace(environment().authentication.audiences[1], 'https://', '')
-              replace(environment().graph, 'https://', '')
+              replace(replace(environment().resourceManager, 'https://', ''), '/', '')
+              replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')
+              replace(replace(environment().authentication.audiences[0], 'https://', ''), '/', '')
+              replace(replace(environment().authentication.audiences[1], 'https://', ''), '/', '')
+              replace(replace(environment().graph, 'https://', ''), '/', '')
             ]
             protocols: [
               {

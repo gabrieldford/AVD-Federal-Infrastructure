@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "17375269552299146122"
+      "templateHash": "9157583399572476052"
     }
   },
   "parameters": {
@@ -698,7 +698,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "14012072275409125704"
+              "templateHash": "5984982083077298302"
             }
           },
           "parameters": {
@@ -1060,7 +1060,7 @@
                         "destinationAddresses": [],
                         "destinationIpGroups": [],
                         "destinationFqdns": [
-                          "[replace(environment().authentication.loginEndpoint, 'https://', '')]"
+                          "[replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')]"
                         ],
                         "destinationPorts": [
                           "443"
@@ -1456,11 +1456,11 @@
                         "ruleType": "ApplicationRule",
                         "sourceAddresses": "[parameters('addsSubnetAddresses')]",
                         "targetFqdns": [
-                          "[replace(environment().resourceManager, 'https://', '')]",
-                          "[replace(environment().authentication.loginEndpoint, 'https://', '')]",
-                          "[replace(environment().authentication.audiences[0], 'https://', '')]",
-                          "[replace(environment().authentication.audiences[1], 'https://', '')]",
-                          "[replace(environment().graph, 'https://', '')]"
+                          "[replace(replace(environment().resourceManager, 'https://', ''), '/', '')]",
+                          "[replace(replace(environment().authentication.loginEndpoint, 'https://', ''), '/', '')]",
+                          "[replace(replace(environment().authentication.audiences[0], 'https://', ''), '/', '')]",
+                          "[replace(replace(environment().authentication.audiences[1], 'https://', ''), '/', '')]",
+                          "[replace(replace(environment().graph, 'https://', ''), '/', '')]"
                         ],
                         "protocols": [
                           {
