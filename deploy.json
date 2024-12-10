@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "6483840223245100036"
+      "templateHash": "12416022454676069618"
     }
   },
   "parameters": {
@@ -1602,11 +1602,11 @@
           "nsgSecurityRules": {
             "value": [
               {
-                "name": "DNS (TCP)",
+                "name": "DNS-TCP",
                 "properties": {
                   "priority": 100,
                   "access": "Allow",
-                  "description": "DNS (TCP)",
+                  "description": "DNS-TCP",
                   "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
                   "direction": "Inbound",
                   "sourcePortRange": "*",
@@ -1619,11 +1619,11 @@
                 }
               },
               {
-                "name": "DNS (UDP)",
+                "name": "DNS-UDP",
                 "properties": {
                   "priority": 110,
                   "access": "Allow",
-                  "description": "DNS (UDP)",
+                  "description": "DNS-UDP",
                   "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
                   "direction": "Inbound",
                   "sourcePortRange": "*",
@@ -1636,7 +1636,7 @@
                 }
               },
               {
-                "name": "Domain Services (TCP)",
+                "name": "DomainServices-TCP",
                 "properties": {
                   "priority": 120,
                   "access": "Allow",
@@ -1663,7 +1663,7 @@
                 }
               },
               {
-                "name": "Domain Services (UDP)",
+                "name": "DomainServices-UDP",
                 "properties": {
                   "priority": 130,
                   "access": "Allow",

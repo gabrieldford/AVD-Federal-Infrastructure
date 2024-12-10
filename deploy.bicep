@@ -38,11 +38,11 @@ var addsServerAddresses = [
 ]
 var addsNsgRules = [
   {
-    name: 'DNS (TCP)'
+    name: 'DNS-TCP'
     properties: {
       priority: 100
       access: 'Allow'
-      description: 'DNS (TCP)'
+      description: 'DNS-TCP'
       destinationAddressPrefix: addsVnetAddressPrefix
       direction: 'Inbound'
       sourcePortRange: '*'
@@ -55,11 +55,11 @@ var addsNsgRules = [
     }
   }
   {
-    name: 'DNS (UDP)'
+    name: 'DNS-UDP'
     properties: {
       priority: 110
       access: 'Allow'
-      description: 'DNS (UDP)'
+      description: 'DNS-UDP'
       destinationAddressPrefix: addsVnetAddressPrefix
       direction: 'Inbound'
       sourcePortRange: '*'
@@ -72,7 +72,7 @@ var addsNsgRules = [
     }
   }
   {
-    name: 'Domain Services (TCP)'
+    name: 'DomainServices-TCP'
     properties: {
       priority: 120
       access: 'Allow'
@@ -99,7 +99,7 @@ var addsNsgRules = [
     }
   }
   {
-    name: 'Domain Services (UDP)'
+    name: 'DomainServices-UDP'
     properties: {
       priority: 130
       access: 'Allow'
@@ -142,7 +142,6 @@ var addsSubnets = [
     addressPrefix: addsVnetAddressPrefix
   }
 ]
-
 var avdNsgRules = [
   {
     name: 'AVDServiceTraffic'
