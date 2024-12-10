@@ -404,7 +404,7 @@ module privateDNSZones 'networking/privateDnsZones.bicep' = {
   name: 'Private-DNS-Zones-${deploymentSuffix}'
   scope: resourceGroup(resourceGroups[1])
   params: {
-    locations: locations
+    recoveryServicesGeo: locations[location].recoveryServicesGeo
     tags: tagsByResourceType[?'Microsoft.Network/privateDnsZones'] ?? {}
     vnetId: hubNetworking.outputs.hubVnetResourceId
   }

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "12416022454676069618"
+      "templateHash": "910338844177191962"
     }
   },
   "parameters": {
@@ -2411,7 +2411,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "12372703176165890666"
+              "templateHash": "10515375989081656202"
             }
           },
           "parameters": {
@@ -2511,7 +2511,7 @@
           },
           "variables": {
             "networkInterfaceName": "nic",
-            "addcVMNameSuffix": "dc",
+            "addcVMNameSuffix": "dc1",
             "companyNamePrefix": "[split(parameters('adDomainName'), '.')[0]]",
             "adVMName": "[toUpper(format('{0}{1}', variables('companyNamePrefix'), variables('addcVMNameSuffix')))]",
             "adDSCTemplate": "[format('{0}DSC/adDSC.zip', parameters('assetLocation'))]",
@@ -2659,8 +2659,8 @@
         },
         "mode": "Incremental",
         "parameters": {
-          "locations": {
-            "value": "[variables('locations')]"
+          "recoveryServicesGeo": {
+            "value": "[variables('locations')[parameters('location')].recoveryServicesGeo]"
           },
           "tags": {
             "value": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/privateDnsZones'), createObject())]"
@@ -2676,30 +2676,39 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "4146602655432211069"
+              "templateHash": "6640644763690949242"
             }
           },
           "parameters": {
             "vnetId": {
               "type": "string"
             },
-            "locations": {
-              "type": "object"
+            "recoveryServicesGeo": {
+              "type": "string"
             },
             "tags": {
               "type": "object"
             }
           },
           "variables": {
-            "copy": [
-              {
-                "name": "privateDnsZoneNames_Backup",
-                "count": "[length(items(parameters('locations')))]",
-                "input": "[format('privatelink.{0}.backup.windowsazure.{1}', items(parameters('locations'))[copyIndex('privateDnsZoneNames_Backup')].value.recoveryServicesGeo, coalesce(variables('privateDnsZoneSuffixes_Backup')[environment().name], variables('cloudSuffix')))]"
-              }
-            ],
             "cloudSuffix": "[replace(replace(environment().resourceManager, 'https://management.', ''), '/', '')]",
-            "privateDnsZoneNames": "[union(createArray(format('privatelink.agentsvc.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix'))), format('privatelink.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix'))), format('privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix')))), format('scm.privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix')))), format('privatelink.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix'))), format('privatelink-global.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix'))), format('privatelink.file.{0}', environment().suffixes.storage), format('privatelink.queue.{0}', environment().suffixes.storage), format('privatelink.table.{0}', environment().suffixes.storage), format('privatelink.blob.{0}', environment().suffixes.storage), format('privatelink{0}', replace(environment().suffixes.keyvaultDns, 'vault', 'vaultcore')), format('privatelink.monitor.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix'))), format('privatelink.ods.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix'))), format('privatelink.oms.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))), variables('privateDnsZoneNames_Backup'))]",
+            "privateDnsZoneNames": [
+              "[format('privatelink.agentsvc.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix'))))]",
+              "[format('scm.privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix'))))]",
+              "[format('privatelink.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink-global.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.file.{0}', environment().suffixes.storage)]",
+              "[format('privatelink.queue.{0}', environment().suffixes.storage)]",
+              "[format('privatelink.table.{0}', environment().suffixes.storage)]",
+              "[format('privatelink.blob.{0}', environment().suffixes.storage)]",
+              "[format('privatelink{0}', replace(environment().suffixes.keyvaultDns, 'vault', 'vaultcore'))]",
+              "[format('privatelink.monitor.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.ods.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.oms.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.{0}.backup.windowsazure.{1}', parameters('recoveryServicesGeo'), coalesce(variables('privateDnsZoneSuffixes_Backup')[environment().name], variables('cloudSuffix')))]"
+            ],
             "privateDnsZoneSuffixes_AzureAutomation": {
               "AzureCloud": "net",
               "AzureUSGovernment": "us",

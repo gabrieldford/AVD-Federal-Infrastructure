@@ -63,7 +63,7 @@ param subnetResourceId string
 param tagsByResourceType object
 
 var networkInterfaceName = 'nic'
-var addcVMNameSuffix = 'dc'
+var addcVMNameSuffix = 'dc1'
 var companyNamePrefix = split(adDomainName, '.')[0]
 var adVMName = toUpper('${companyNamePrefix}${addcVMNameSuffix}')
 var adDSCTemplate = '${assetLocation}DSC/adDSC.zip'
