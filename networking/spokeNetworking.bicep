@@ -1,3 +1,4 @@
+param fwIPAddress string
 param vnetName string
 param nsgName string
 param nsgSecurityRules array
@@ -5,7 +6,7 @@ param deploymentSuffix string
 param location string
 param hubVnetResourceId string
 param vnetAddressPrefix string
-param fwIPAddress string
+param dnsServers array
 param subnets array
 param routeTableName string
 param tagsByResourceType object
@@ -60,9 +61,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-03-01' = {
       ]
     }
     dhcpOptions: {
-      dnsServers: [
-        fwIPAddress
-      ]
+      dnsServers: dnsServers
     }
     subnets: snets
   }
