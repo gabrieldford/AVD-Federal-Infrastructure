@@ -318,7 +318,7 @@ var locations = (loadJsonContent('data/locations.json'))[environment().name]
 
 var resourceGroups = [
   'rg-hub-networking-${locations[location].abbreviation}'
-  'rg-privateDnsZones'
+  'rg-privateDnsZones-${locations[location].abbreviation}'
   'rg-adds-${locations[location].abbreviation}'
   'rg-avd-networking-${locations[location].abbreviation}'
 ]

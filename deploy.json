@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "2569970420957558429"
+      "templateHash": "18246878176026055144"
     }
   },
   "parameters": {
@@ -623,7 +623,7 @@
     "locations": "[variables('$fxv#0')[environment().name]]",
     "resourceGroups": [
       "[format('rg-hub-networking-{0}', variables('locations')[parameters('location')].abbreviation)]",
-      "rg-privateDnsZones",
+      "[format('rg-privateDnsZones-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-avd-networking-{0}', variables('locations')[parameters('location')].abbreviation)]"
     ]
