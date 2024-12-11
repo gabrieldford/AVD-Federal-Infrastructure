@@ -40,15 +40,10 @@ resource nsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01
   properties: {
     logs: [
       {
-        category: 'NetworkSecurityGroupEvent'
-        enabled: true
-      }
-      {
-        category: 'NetworkSecurityGroupRuleCounter'
+        categoryGroup: 'allLogs'
         enabled: true
       }
     ]
-    metrics: []
     workspaceId: logAnalyticsWorkspaceResourceId
   }
 }

@@ -317,7 +317,7 @@ var deploymentSuffix = substring(deployment().name, length(deployment().name) - 
 var locations = (loadJsonContent('data/locations.json'))[environment().name]
 
 var resourceGroups = [
-  'rg-monitoring-${locations[location].abbreviation}'
+  'rg-security-monitoring-${locations[location].abbreviation}'
   'rg-hub-networking-${locations[location].abbreviation}'
   'rg-adds-${locations[location].abbreviation}'
   'rg-privateDnsZones-${locations[location].abbreviation}'

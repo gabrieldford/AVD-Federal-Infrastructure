@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "1339280781155286462"
+      "templateHash": "4603156758679196165"
     }
   },
   "parameters": {
@@ -622,7 +622,7 @@
     "deploymentSuffix": "[substring(deployment().name, sub(length(deployment().name), 14), 12)]",
     "locations": "[variables('$fxv#0')[environment().name]]",
     "resourceGroups": [
-      "[format('rg-monitoring-{0}', variables('locations')[parameters('location')].abbreviation)]",
+      "[format('rg-security-monitoring-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-hub-networking-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-privateDnsZones-{0}', variables('locations')[parameters('location')].abbreviation)]",
@@ -835,7 +835,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "6509101701349447897"
+              "templateHash": "6917905959792407744"
             }
           },
           "parameters": {
@@ -1666,22 +1666,14 @@
                 "workspaceId": "[parameters('logAnalyticsWorkspaceId')]",
                 "logs": [
                   {
-                    "categoryGroup": "AllLogs",
-                    "enabled": true,
-                    "retentionPolicy": {
-                      "days": 30,
-                      "enabled": true
-                    }
+                    "categoryGroup": "allLogs",
+                    "enabled": true
                   }
                 ],
                 "metrics": [
                   {
                     "category": "AllMetrics",
-                    "enabled": true,
-                    "retentionPolicy": {
-                      "days": 30,
-                      "enabled": true
-                    }
+                    "enabled": true
                   }
                 ]
               },
@@ -1906,7 +1898,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "3913641493907391401"
+              "templateHash": "10866586200041556699"
             }
           },
           "parameters": {
@@ -1972,15 +1964,10 @@
               "properties": {
                 "logs": [
                   {
-                    "category": "NetworkSecurityGroupEvent",
-                    "enabled": true
-                  },
-                  {
-                    "category": "NetworkSecurityGroupRuleCounter",
+                    "categoryGroup": "allLogs",
                     "enabled": true
                   }
                 ],
-                "metrics": [],
                 "workspaceId": "[parameters('logAnalyticsWorkspaceResourceId')]"
               },
               "dependsOn": [
@@ -2422,7 +2409,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "3913641493907391401"
+              "templateHash": "10866586200041556699"
             }
           },
           "parameters": {
@@ -2488,15 +2475,10 @@
               "properties": {
                 "logs": [
                   {
-                    "category": "NetworkSecurityGroupEvent",
-                    "enabled": true
-                  },
-                  {
-                    "category": "NetworkSecurityGroupRuleCounter",
+                    "categoryGroup": "allLogs",
                     "enabled": true
                   }
                 ],
-                "metrics": [],
                 "workspaceId": "[parameters('logAnalyticsWorkspaceResourceId')]"
               },
               "dependsOn": [

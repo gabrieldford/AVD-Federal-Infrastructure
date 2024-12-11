@@ -775,22 +775,14 @@ resource azureFirewallDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05
     workspaceId: logAnalyticsWorkspaceId
     logs: [
       {
-        categoryGroup: 'AllLogs'
-        enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
+        categoryGroup: 'allLogs'
+        enabled: true        
       }      
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          days: 30
-          enabled: true
-        }
       }
     ]
   }
