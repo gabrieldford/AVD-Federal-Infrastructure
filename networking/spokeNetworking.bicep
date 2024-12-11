@@ -1,15 +1,16 @@
+param deploymentSuffix string
+param dnsServers array
 param fwIPAddress string
-param vnetName string
+param hubVnetResourceId string
+param location string
+param logAnalyticsWorkspaceResourceId string
 param nsgName string
 param nsgSecurityRules array
-param deploymentSuffix string
-param location string
-param hubVnetResourceId string
-param vnetAddressPrefix string
-param dnsServers array
 param subnets array
 param routeTableName string
 param tagsByResourceType object
+param vnetAddresses array
+param vnetName string
 
 var snets = map(subnets, snet => {
   name: snet.name
@@ -31,6 +32,25 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
     securityRules: nsgSecurityRules
   }
   tags: tagsByResourceType[?'Microsoft.Network/networkSecurityGroups'] ?? {}
+}
+
+resource nsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${nsgName}-diagnosticSettings'
+  scope: nsg
+  properties: {
+    logs: [
+      {
+        category: 'NetworkSecurityGroupEvent'
+        enabled: true
+      }
+      {
+        category: 'NetworkSecurityGroupRuleCounter'
+        enabled: true
+      }
+    ]
+    metrics: []
+    workspaceId: logAnalyticsWorkspaceResourceId
+  }
 }
 
 resource routeTable 'Microsoft.Network/routeTables@2023-04-01' = {
@@ -56,9 +76,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-03-01' = {
   name: vnetName
   properties: {
     addressSpace: {
-      addressPrefixes: [
-        vnetAddressPrefix
-      ]
+      addressPrefixes: vnetAddresses
     }
     dhcpOptions: empty(dnsServers) ? null : {
       dnsServers: dnsServers

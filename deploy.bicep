@@ -317,9 +317,10 @@ var deploymentSuffix = substring(deployment().name, length(deployment().name) - 
 var locations = (loadJsonContent('data/locations.json'))[environment().name]
 
 var resourceGroups = [
+  'rg-monitoring-${locations[location].abbreviation}'
   'rg-hub-networking-${locations[location].abbreviation}'
-  'rg-privateDnsZones-${locations[location].abbreviation}'
   'rg-adds-${locations[location].abbreviation}'
+  'rg-privateDnsZones-${locations[location].abbreviation}'
   'rg-avd-networking-${locations[location].abbreviation}'
 ]
 
@@ -329,12 +330,26 @@ resource rgs 'Microsoft.Resources/resourceGroups@2024-03-01' = [for rg in resour
   tags: tagsByResourceType[?'Microsoft.Resources/ResourceGroups'] ?? {}
 }]
 
-module hubNetworking 'networking/hubNetworking.bicep' = {
+module monitoring 'monitoring/monitoring.bicep' = {
+  name: 'monitoring-${deploymentSuffix}'
   scope: resourceGroup(resourceGroups[0])
+  params: {
+    dataCollectionRuleName: 'dcr-security-${locations[location].abbreviation}'
+    location: location
+    logAnalyticsWorkspaceName: 'log-security-${locations[location].abbreviation}'
+    tagsByResourceType: tagsByResourceType
+  }
+  dependsOn: [
+    rgs
+  ]
+}
+
+module hubNetworking 'networking/hubNetworking.bicep' = {
+  scope: resourceGroup(resourceGroups[1])
   name: 'hub-networking-${deploymentSuffix}'
   params: {
     availabilityZones: availabilityZones
-    vnetAddressPrefix: hubVnetAddressPrefix
+    hubVnetAddresses: [hubVnetAddressPrefix]
     addsSubnetAddresses: [addsVnetAddressPrefix]
     avdSubnetAddresses: [avdVnetAddressPrefix]
     bastionName: 'bas-${locations[location].abbreviation}'
@@ -343,6 +358,7 @@ module hubNetworking 'networking/hubNetworking.bicep' = {
     firewallPolicyName: 'afwp-${locations[location].abbreviation}'
     firewallPublicIpName: 'pip-afw-${locations[location].abbreviation}'
     location: location
+    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     vnetName: 'vnet-hub-${locations[location].abbreviation}'
     bastionSubnetPrefix: bastionSubnetPrefix
     firewallSubnetPrefix: firewallSubnetPrefix
@@ -364,13 +380,29 @@ module addsNetworking 'networking/spokeNetworking.bicep' = {
     fwIPAddress: hubNetworking.outputs.firewallIp
     hubVnetResourceId: hubNetworking.outputs.hubVnetResourceId
     location: location
+    logAnalyticsWorkspaceResourceId: monitoring.outputs.logAnalyticsWorkspaceId
     nsgName: 'nsg-adds-${locations[location].abbreviation}'
     nsgSecurityRules: addsNsgRules
     routeTableName: 'rt-adds-${locations[location].abbreviation}'
     subnets: addsSubnets
     tagsByResourceType: tagsByResourceType
-    vnetAddressPrefix: addsVnetAddressPrefix
+    vnetAddresses: [
+      addsVnetAddressPrefix
+    ]
     vnetName: 'vnet-adds-${locations[location].abbreviation}'
+  }
+  dependsOn: [
+    rgs
+  ]
+}
+
+module privateDNSZones 'networking/privateDnsZones.bicep' = {
+  name: 'Private-DNS-Zones-${deploymentSuffix}'
+  scope: resourceGroup(resourceGroups[3])
+  params: {
+    recoveryServicesGeo: locations[location].recoveryServicesGeo
+    tags: tagsByResourceType[?'Microsoft.Network/privateDnsZones'] ?? {}
+    vnetId: addsNetworking.outputs.vnetResourceId
   }
   dependsOn: [
     rgs
@@ -379,7 +411,7 @@ module addsNetworking 'networking/spokeNetworking.bicep' = {
 
 module avdNetworking 'networking/spokeNetworking.bicep' = {
   name: 'avd-networking-${deploymentSuffix}'
-  scope: resourceGroup(resourceGroups[3])
+  scope: resourceGroup(resourceGroups[4])
   params: {
     deploymentSuffix: deploymentSuffix
     dnsServers: [
@@ -388,12 +420,15 @@ module avdNetworking 'networking/spokeNetworking.bicep' = {
     fwIPAddress: hubNetworking.outputs.firewallIp
     hubVnetResourceId: hubNetworking.outputs.hubVnetResourceId
     location: location
+    logAnalyticsWorkspaceResourceId: monitoring.outputs.logAnalyticsWorkspaceId
     nsgName: 'nsg-avd-${locations[location].abbreviation}'
     nsgSecurityRules: avdNsgRules
     routeTableName: 'rt-avd-${locations[location].abbreviation}'
     subnets: avdSubnets
     tagsByResourceType: tagsByResourceType
-    vnetAddressPrefix: avdVnetAddressPrefix
+    vnetAddresses: [
+      avdVnetAddressPrefix
+    ]
     vnetName: 'vnet-avd-${locations[location].abbreviation}'
   }
   dependsOn: [
@@ -415,19 +450,6 @@ module domainController 'domainController/domainController.bicep' = {
     subnetResourceId: addsNetworking.outputs.subnetResourceIds[0]
     tagsByResourceType: tagsByResourceType
     vmSize: vmSize
-  }
-  dependsOn: [
-    rgs
-  ]
-}
-
-module privateDNSZones 'networking/privateDnsZones.bicep' = {
-  name: 'Private-DNS-Zones-${deploymentSuffix}'
-  scope: resourceGroup(resourceGroups[1])
-  params: {
-    recoveryServicesGeo: locations[location].recoveryServicesGeo
-    tags: tagsByResourceType[?'Microsoft.Network/privateDnsZones'] ?? {}
-    vnetId: addsNetworking.outputs.vnetResourceId
   }
   dependsOn: [
     rgs

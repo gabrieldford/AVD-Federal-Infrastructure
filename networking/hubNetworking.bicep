@@ -2,11 +2,12 @@ param addsSubnetAddresses array
 param avdSubnetAddresses array
 param availabilityZones array
 param dnsServers array
-param vnetAddressPrefix string
+param hubVnetAddresses array
 param firewallPolicyName string
 param firewallSubnetPrefix string
 param bastionSubnetPrefix string
 param gatewaySubnetPrefix string
+param logAnalyticsWorkspaceId string
 param vnetName string
 param firewallName string
 param firewallPublicIpName string
@@ -20,9 +21,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
   location: location
   properties: {
     addressSpace: {
-      addressPrefixes: [
-        vnetAddressPrefix
-      ]
+      addressPrefixes: hubVnetAddresses
     }
     subnets: [
       {
@@ -43,7 +42,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
           addressPrefix: gatewaySubnetPrefix
         }
       }
-    ]    
+    ]
   }
   tags: tagsByResourceType[?'Microsoft.Network/virtualNetworks'] ?? {}
 }
@@ -118,7 +117,7 @@ resource ruleCollectionGroup_ADDS_Inbound 'Microsoft.Network/firewallPolicies/ru
             ipProtocols: [
               'TCP'
             ]
-          }          
+          }
         ]
       }
       {
@@ -196,7 +195,7 @@ resource ruleCollectionGroup_ADDS_Outbound 'Microsoft.Network/firewallPolicies/r
             destinationPorts: [
               '53'
             ]
-          }  
+          }
           {
             ruleType: 'NetworkRule'
             name: 'NTP'
@@ -204,21 +203,21 @@ resource ruleCollectionGroup_ADDS_Outbound 'Microsoft.Network/firewallPolicies/r
               'TCP'
               'UDP'
             ]
-            sourceAddresses: avdSubnetAddresses
+            sourceAddresses: addsSubnetAddresses
             destinationFqdns: [
               'time.windows.com'
             ]
             destinationPorts: [
               '123'
             ]
-          }          
+          }
           {
             ruleType: 'NetworkRule'
             name: 'DetectOSconnectedToInternet'
             ipProtocols: [
               'TCP'
             ]
-            sourceAddresses: avdSubnetAddresses
+            sourceAddresses: addsSubnetAddresses
             destinationFqdns: [
               'www.msftconnecttest.com'
             ]
@@ -226,8 +225,25 @@ resource ruleCollectionGroup_ADDS_Outbound 'Microsoft.Network/firewallPolicies/r
               '443'
             ]
           }
+          {
+            ruleType: 'NetworkRule'
+            name: 'Allow All Outbound'
+            ipProtocols: [
+              'Any'
+            ]
+            sourceAddresses: addsSubnetAddresses
+            sourceIpGroups: []
+            destinationAddresses: [
+              '*'
+            ]
+            destinationIpGroups: []
+            destinationFqdns: []
+            destinationPorts: [
+              '*'
+            ]
+          }
         ]
-      }      
+      }
       {
         name: 'ApplicationRules-ADDS-Outbound'
         action: {
@@ -256,7 +272,7 @@ resource ruleCollectionGroup_ADDS_Outbound 'Microsoft.Network/firewallPolicies/r
             sourceAddresses: addsSubnetAddresses
             destinationAddresses: []
             sourceIpGroups: []
-          }          
+          }
         ]
       }
     ]
@@ -552,6 +568,23 @@ resource ruleCollectionGroup_AVD_Outbound 'Microsoft.Network/firewallPolicies/ru
               '443'
             ]
           }
+          {
+            ruleType: 'NetworkRule'
+            name: 'Allow All Outbound'
+            ipProtocols: [
+              'Any'
+            ]
+            sourceAddresses: avdSubnetAddresses
+            sourceIpGroups: []
+            destinationAddresses: [
+              '*'
+            ]
+            destinationIpGroups: []
+            destinationFqdns: []
+            destinationPorts: [
+              '*'
+            ]
+          }
         ]
       }
       {
@@ -559,7 +592,7 @@ resource ruleCollectionGroup_AVD_Outbound 'Microsoft.Network/firewallPolicies/ru
         action: {
           type: 'Allow'
         }
-        priority: 11200
+        priority: 10200
         ruleCollectionType: 'FirewallPolicyFilterRuleCollection'
         rules: [
           {
@@ -691,7 +724,7 @@ resource ruleCollectionGroup_AVD_Outbound 'Microsoft.Network/firewallPolicies/ru
             sourceAddresses: addsSubnetAddresses
             destinationAddresses: []
             sourceIpGroups: []
-          }    
+          }
         ]
       }
     ]
@@ -733,6 +766,34 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
     ruleCollectionGroup_ADDS_Outbound
     ruleCollectionGroup_AVD_Outbound
   ]
+}
+
+resource azureFirewallDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${firewallName}-diagnosticSettings'
+  scope: azureFirewall
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    logs: [
+      {
+        categoryGroup: 'AllLogs'
+        enabled: true
+        retentionPolicy: {
+          days: 30
+          enabled: true
+        }
+      }      
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+        retentionPolicy: {
+          days: 30
+          enabled: true
+        }
+      }
+    ]
+  }
 }
 
 resource azureBastion 'Microsoft.Network/bastionHosts@2023-02-01' = {

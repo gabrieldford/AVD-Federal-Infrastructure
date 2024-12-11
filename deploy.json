@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "18246878176026055144"
+      "templateHash": "1339280781155286462"
     }
   },
   "parameters": {
@@ -622,9 +622,10 @@
     "deploymentSuffix": "[substring(deployment().name, sub(length(deployment().name), 14), 12)]",
     "locations": "[variables('$fxv#0')[environment().name]]",
     "resourceGroups": [
+      "[format('rg-monitoring-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-hub-networking-{0}', variables('locations')[parameters('location')].abbreviation)]",
-      "[format('rg-privateDnsZones-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]",
+      "[format('rg-privateDnsZones-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-avd-networking-{0}', variables('locations')[parameters('location')].abbreviation)]"
     ]
   },
@@ -643,8 +644,126 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
-      "name": "[format('hub-networking-{0}', variables('deploymentSuffix'))]",
+      "name": "[format('monitoring-{0}', variables('deploymentSuffix'))]",
       "resourceGroup": "[variables('resourceGroups')[0]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "dataCollectionRuleName": {
+            "value": "[format('dcr-security-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "logAnalyticsWorkspaceName": {
+            "value": "[format('log-security-{0}', variables('locations')[parameters('location')].abbreviation)]"
+          },
+          "tagsByResourceType": {
+            "value": "[parameters('tagsByResourceType')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "6340963796803944935"
+            }
+          },
+          "parameters": {
+            "dataCollectionRuleName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceName": {
+              "type": "string"
+            },
+            "tagsByResourceType": {
+              "type": "object"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('logAnalyticsWorkspaceName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                }
+              },
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.OperationalInsights/workspaces'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[parameters('dataCollectionRuleName')]",
+              "location": "[parameters('location')]",
+              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Insights/dataCollectionRules'), createObject())]",
+              "kind": "Windows",
+              "properties": {
+                "dataSources": {
+                  "windowsEventLogs": [
+                    {
+                      "streams": [
+                        "Microsoft-Event"
+                      ],
+                      "xPathQueries": [
+                        "Security!*[System[(band(Keywords,13510798882111488))]]"
+                      ],
+                      "name": "eventLogsDataSource"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "Microsoft-Event"
+                    ],
+                    "destinations": [
+                      "la-workspace"
+                    ]
+                  }
+                ],
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "name": "la-workspace",
+                      "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "logAnalyticsWorkspaceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "rgs"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('hub-networking-{0}', variables('deploymentSuffix'))]",
+      "resourceGroup": "[variables('resourceGroups')[1]]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -654,8 +773,10 @@
           "availabilityZones": {
             "value": "[parameters('availabilityZones')]"
           },
-          "vnetAddressPrefix": {
-            "value": "[variables('hubVnetAddressPrefix')]"
+          "hubVnetAddresses": {
+            "value": [
+              "[variables('hubVnetAddressPrefix')]"
+            ]
           },
           "addsSubnetAddresses": {
             "value": [
@@ -685,6 +806,9 @@
           "location": {
             "value": "[parameters('location')]"
           },
+          "logAnalyticsWorkspaceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('monitoring-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.logAnalyticsWorkspaceId.value]"
+          },
           "vnetName": {
             "value": "[format('vnet-hub-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
@@ -711,7 +835,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "7123935518381539307"
+              "templateHash": "6509101701349447897"
             }
           },
           "parameters": {
@@ -727,8 +851,8 @@
             "dnsServers": {
               "type": "array"
             },
-            "vnetAddressPrefix": {
-              "type": "string"
+            "hubVnetAddresses": {
+              "type": "array"
             },
             "firewallPolicyName": {
               "type": "string"
@@ -740,6 +864,9 @@
               "type": "string"
             },
             "gatewaySubnetPrefix": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceId": {
               "type": "string"
             },
             "vnetName": {
@@ -772,9 +899,7 @@
               "location": "[parameters('location')]",
               "properties": {
                 "addressSpace": {
-                  "addressPrefixes": [
-                    "[parameters('vnetAddressPrefix')]"
-                  ]
+                  "addressPrefixes": "[parameters('hubVnetAddresses')]"
                 },
                 "subnets": [
                   {
@@ -962,7 +1087,7 @@
                           "TCP",
                           "UDP"
                         ],
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
                         "destinationFqdns": [
                           "time.windows.com"
                         ],
@@ -976,12 +1101,29 @@
                         "ipProtocols": [
                           "TCP"
                         ],
-                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
                         "destinationFqdns": [
                           "www.msftconnecttest.com"
                         ],
                         "destinationPorts": [
                           "443"
+                        ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Allow All Outbound",
+                        "ipProtocols": [
+                          "Any"
+                        ],
+                        "sourceAddresses": "[parameters('addsSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "*"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "*"
                         ]
                       }
                     ]
@@ -1310,6 +1452,23 @@
                         "destinationPorts": [
                           "443"
                         ]
+                      },
+                      {
+                        "ruleType": "NetworkRule",
+                        "name": "Allow All Outbound",
+                        "ipProtocols": [
+                          "Any"
+                        ],
+                        "sourceAddresses": "[parameters('avdSubnetAddresses')]",
+                        "sourceIpGroups": [],
+                        "destinationAddresses": [
+                          "*"
+                        ],
+                        "destinationIpGroups": [],
+                        "destinationFqdns": [],
+                        "destinationPorts": [
+                          "*"
+                        ]
                       }
                     ]
                   },
@@ -1318,7 +1477,7 @@
                     "action": {
                       "type": "Allow"
                     },
-                    "priority": 11200,
+                    "priority": 10200,
                     "ruleCollectionType": "FirewallPolicyFilterRuleCollection",
                     "rules": [
                       {
@@ -1499,6 +1658,38 @@
               ]
             },
             {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.Network/azureFirewalls/{0}', parameters('firewallName'))]",
+              "name": "[format('{0}-diagnosticSettings', parameters('firewallName'))]",
+              "properties": {
+                "workspaceId": "[parameters('logAnalyticsWorkspaceId')]",
+                "logs": [
+                  {
+                    "categoryGroup": "AllLogs",
+                    "enabled": true,
+                    "retentionPolicy": {
+                      "days": 30,
+                      "enabled": true
+                    }
+                  }
+                ],
+                "metrics": [
+                  {
+                    "category": "AllMetrics",
+                    "enabled": true,
+                    "retentionPolicy": {
+                      "days": 30,
+                      "enabled": true
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/azureFirewalls', parameters('firewallName'))]"
+              ]
+            },
+            {
               "type": "Microsoft.Network/bastionHosts",
               "apiVersion": "2023-02-01",
               "name": "[parameters('bastionName')]",
@@ -1538,6 +1729,7 @@
         }
       },
       "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('monitoring-{0}', variables('deploymentSuffix')))]",
         "rgs"
       ]
     },
@@ -1559,13 +1751,16 @@
             "value": []
           },
           "fwIPAddress": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
           },
           "hubVnetResourceId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
           },
           "location": {
             "value": "[parameters('location')]"
+          },
+          "logAnalyticsWorkspaceResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('monitoring-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.logAnalyticsWorkspaceId.value]"
           },
           "nsgName": {
             "value": "[format('nsg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"
@@ -1585,7 +1780,7 @@
                   "protocol": "Tcp",
                   "sourceAddressPrefixes": [
                     "[variables('addsVnetAddressPrefix')]",
-                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
+                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
                   ]
                 }
               },
@@ -1602,7 +1797,7 @@
                   "protocol": "Udp",
                   "sourceAddressPrefixes": [
                     "[variables('addsVnetAddressPrefix')]",
-                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
+                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
                   ]
                 }
               },
@@ -1695,8 +1890,10 @@
           "tagsByResourceType": {
             "value": "[parameters('tagsByResourceType')]"
           },
-          "vnetAddressPrefix": {
-            "value": "[variables('addsVnetAddressPrefix')]"
+          "vnetAddresses": {
+            "value": [
+              "[variables('addsVnetAddressPrefix')]"
+            ]
           },
           "vnetName": {
             "value": "[format('vnet-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"
@@ -1709,35 +1906,32 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "13603633652394064339"
+              "templateHash": "3913641493907391401"
             }
           },
           "parameters": {
+            "deploymentSuffix": {
+              "type": "string"
+            },
+            "dnsServers": {
+              "type": "array"
+            },
             "fwIPAddress": {
               "type": "string"
             },
-            "vnetName": {
+            "hubVnetResourceId": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceResourceId": {
               "type": "string"
             },
             "nsgName": {
               "type": "string"
             },
             "nsgSecurityRules": {
-              "type": "array"
-            },
-            "deploymentSuffix": {
-              "type": "string"
-            },
-            "location": {
-              "type": "string"
-            },
-            "hubVnetResourceId": {
-              "type": "string"
-            },
-            "vnetAddressPrefix": {
-              "type": "string"
-            },
-            "dnsServers": {
               "type": "array"
             },
             "subnets": {
@@ -1748,6 +1942,12 @@
             },
             "tagsByResourceType": {
               "type": "object"
+            },
+            "vnetAddresses": {
+              "type": "array"
+            },
+            "vnetName": {
+              "type": "string"
             }
           },
           "variables": {
@@ -1763,6 +1963,29 @@
                 "securityRules": "[parameters('nsgSecurityRules')]"
               },
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/networkSecurityGroups'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', parameters('nsgName'))]",
+              "name": "[format('{0}-diagnosticSettings', parameters('nsgName'))]",
+              "properties": {
+                "logs": [
+                  {
+                    "category": "NetworkSecurityGroupEvent",
+                    "enabled": true
+                  },
+                  {
+                    "category": "NetworkSecurityGroupRuleCounter",
+                    "enabled": true
+                  }
+                ],
+                "metrics": [],
+                "workspaceId": "[parameters('logAnalyticsWorkspaceResourceId')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+              ]
             },
             {
               "type": "Microsoft.Network/routeTables",
@@ -1790,9 +2013,7 @@
               "location": "[parameters('location')]",
               "properties": {
                 "addressSpace": {
-                  "addressPrefixes": [
-                    "[parameters('vnetAddressPrefix')]"
-                  ]
+                  "addressPrefixes": "[parameters('vnetAddresses')]"
                 },
                 "dhcpOptions": "[if(empty(parameters('dnsServers')), null(), createObject('dnsServers', parameters('dnsServers')))]",
                 "subnets": "[variables('snets')]"
@@ -2003,7 +2224,139 @@
         }
       },
       "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('monitoring-{0}', variables('deploymentSuffix')))]",
+        "rgs"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('Private-DNS-Zones-{0}', variables('deploymentSuffix'))]",
+      "resourceGroup": "[variables('resourceGroups')[3]]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "recoveryServicesGeo": {
+            "value": "[variables('locations')[parameters('location')].recoveryServicesGeo]"
+          },
+          "tags": {
+            "value": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/privateDnsZones'), createObject())]"
+          },
+          "vnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.vnetResourceId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.32.4.45862",
+              "templateHash": "6640644763690949242"
+            }
+          },
+          "parameters": {
+            "vnetId": {
+              "type": "string"
+            },
+            "recoveryServicesGeo": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            }
+          },
+          "variables": {
+            "cloudSuffix": "[replace(replace(environment().resourceManager, 'https://management.', ''), '/', '')]",
+            "privateDnsZoneNames": [
+              "[format('privatelink.agentsvc.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix'))))]",
+              "[format('scm.privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix'))))]",
+              "[format('privatelink.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink-global.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.file.{0}', environment().suffixes.storage)]",
+              "[format('privatelink.queue.{0}', environment().suffixes.storage)]",
+              "[format('privatelink.table.{0}', environment().suffixes.storage)]",
+              "[format('privatelink.blob.{0}', environment().suffixes.storage)]",
+              "[format('privatelink{0}', replace(environment().suffixes.keyvaultDns, 'vault', 'vaultcore'))]",
+              "[format('privatelink.monitor.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.ods.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.oms.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
+              "[format('privatelink.{0}.backup.windowsazure.{1}', parameters('recoveryServicesGeo'), coalesce(variables('privateDnsZoneSuffixes_Backup')[environment().name], variables('cloudSuffix')))]"
+            ],
+            "privateDnsZoneSuffixes_AzureAutomation": {
+              "AzureCloud": "net",
+              "AzureUSGovernment": "us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_AzureVirtualDesktop": {
+              "AzureCloud": "microsoft.com",
+              "AzureUSGovernment": "azure.us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_AzureWebSites": {
+              "AzureCloud": "azurewebsites.net",
+              "AzureUSGovernment": "azurewebsites.us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_Backup": {
+              "AzureCloud": "com",
+              "AzureUSGovernment": "us",
+              "USNat": null,
+              "USSec": null
+            },
+            "privateDnsZoneSuffixes_Monitor": {
+              "AzureCloud": "azure.com",
+              "AzureUSGovernment": "azure.us",
+              "USNat": null,
+              "USSec": null
+            }
+          },
+          "resources": [
+            {
+              "copy": {
+                "name": "privateDnsZones",
+                "count": "[length(variables('privateDnsZoneNames'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "[variables('privateDnsZoneNames')[copyIndex()]]",
+              "location": "global",
+              "tags": "[coalesce(tryGet(parameters('tags'), 'Microsoft.Network/privateDnsZones'), createObject())]"
+            },
+            {
+              "copy": {
+                "name": "virtualNetworkLinks",
+                "count": "[length(variables('privateDnsZoneNames'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2018-09-01",
+              "name": "[format('{0}/{1}', variables('privateDnsZoneNames')[copyIndex()], last(split(parameters('vnetId'), '/')))]",
+              "location": "global",
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[parameters('vnetId')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix')))]",
         "rgs"
       ]
     },
@@ -2011,7 +2364,7 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "[format('avd-networking-{0}', variables('deploymentSuffix'))]",
-      "resourceGroup": "[variables('resourceGroups')[3]]",
+      "resourceGroup": "[variables('resourceGroups')[4]]",
       "properties": {
         "expressionEvaluationOptions": {
           "scope": "inner"
@@ -2023,17 +2376,20 @@
           },
           "dnsServers": {
             "value": [
-              "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
+              "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
             ]
           },
           "fwIPAddress": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
           },
           "hubVnetResourceId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
           },
           "location": {
             "value": "[parameters('location')]"
+          },
+          "logAnalyticsWorkspaceResourceId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('monitoring-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.logAnalyticsWorkspaceId.value]"
           },
           "nsgName": {
             "value": "[format('nsg-avd-{0}', variables('locations')[parameters('location')].abbreviation)]"
@@ -2050,8 +2406,10 @@
           "tagsByResourceType": {
             "value": "[parameters('tagsByResourceType')]"
           },
-          "vnetAddressPrefix": {
-            "value": "[variables('avdVnetAddressPrefix')]"
+          "vnetAddresses": {
+            "value": [
+              "[variables('avdVnetAddressPrefix')]"
+            ]
           },
           "vnetName": {
             "value": "[format('vnet-avd-{0}', variables('locations')[parameters('location')].abbreviation)]"
@@ -2064,35 +2422,32 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "13603633652394064339"
+              "templateHash": "3913641493907391401"
             }
           },
           "parameters": {
+            "deploymentSuffix": {
+              "type": "string"
+            },
+            "dnsServers": {
+              "type": "array"
+            },
             "fwIPAddress": {
               "type": "string"
             },
-            "vnetName": {
+            "hubVnetResourceId": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceResourceId": {
               "type": "string"
             },
             "nsgName": {
               "type": "string"
             },
             "nsgSecurityRules": {
-              "type": "array"
-            },
-            "deploymentSuffix": {
-              "type": "string"
-            },
-            "location": {
-              "type": "string"
-            },
-            "hubVnetResourceId": {
-              "type": "string"
-            },
-            "vnetAddressPrefix": {
-              "type": "string"
-            },
-            "dnsServers": {
               "type": "array"
             },
             "subnets": {
@@ -2103,6 +2458,12 @@
             },
             "tagsByResourceType": {
               "type": "object"
+            },
+            "vnetAddresses": {
+              "type": "array"
+            },
+            "vnetName": {
+              "type": "string"
             }
           },
           "variables": {
@@ -2118,6 +2479,29 @@
                 "securityRules": "[parameters('nsgSecurityRules')]"
               },
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/networkSecurityGroups'), createObject())]"
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', parameters('nsgName'))]",
+              "name": "[format('{0}-diagnosticSettings', parameters('nsgName'))]",
+              "properties": {
+                "logs": [
+                  {
+                    "category": "NetworkSecurityGroupEvent",
+                    "enabled": true
+                  },
+                  {
+                    "category": "NetworkSecurityGroupRuleCounter",
+                    "enabled": true
+                  }
+                ],
+                "metrics": [],
+                "workspaceId": "[parameters('logAnalyticsWorkspaceResourceId')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('nsgName'))]"
+              ]
             },
             {
               "type": "Microsoft.Network/routeTables",
@@ -2145,9 +2529,7 @@
               "location": "[parameters('location')]",
               "properties": {
                 "addressSpace": {
-                  "addressPrefixes": [
-                    "[parameters('vnetAddressPrefix')]"
-                  ]
+                  "addressPrefixes": "[parameters('vnetAddresses')]"
                 },
                 "dhcpOptions": "[if(empty(parameters('dnsServers')), null(), createObject('dnsServers', parameters('dnsServers')))]",
                 "subnets": "[variables('snets')]"
@@ -2358,7 +2740,8 @@
         }
       },
       "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('monitoring-{0}', variables('deploymentSuffix')))]",
         "rgs"
       ]
     },
@@ -2637,137 +3020,6 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Compute/virtualMachines', variables('adVMName'))]"
-              ]
-            }
-          ]
-        }
-      },
-      "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix')))]",
-        "rgs"
-      ]
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2022-09-01",
-      "name": "[format('Private-DNS-Zones-{0}', variables('deploymentSuffix'))]",
-      "resourceGroup": "[variables('resourceGroups')[1]]",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "recoveryServicesGeo": {
-            "value": "[variables('locations')[parameters('location')].recoveryServicesGeo]"
-          },
-          "tags": {
-            "value": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/privateDnsZones'), createObject())]"
-          },
-          "vnetId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.vnetResourceId.value]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.32.4.45862",
-              "templateHash": "6640644763690949242"
-            }
-          },
-          "parameters": {
-            "vnetId": {
-              "type": "string"
-            },
-            "recoveryServicesGeo": {
-              "type": "string"
-            },
-            "tags": {
-              "type": "object"
-            }
-          },
-          "variables": {
-            "cloudSuffix": "[replace(replace(environment().resourceManager, 'https://management.', ''), '/', '')]",
-            "privateDnsZoneNames": [
-              "[format('privatelink.agentsvc.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix')))]",
-              "[format('privatelink.azure-automation.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureAutomation')[environment().name], variables('cloudSuffix')))]",
-              "[format('privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix'))))]",
-              "[format('scm.privatelink.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureWebSites')[environment().name], format('appservice.{0}', variables('cloudSuffix'))))]",
-              "[format('privatelink.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix')))]",
-              "[format('privatelink-global.wvd.{0}', coalesce(variables('privateDnsZoneSuffixes_AzureVirtualDesktop')[environment().name], variables('cloudSuffix')))]",
-              "[format('privatelink.file.{0}', environment().suffixes.storage)]",
-              "[format('privatelink.queue.{0}', environment().suffixes.storage)]",
-              "[format('privatelink.table.{0}', environment().suffixes.storage)]",
-              "[format('privatelink.blob.{0}', environment().suffixes.storage)]",
-              "[format('privatelink{0}', replace(environment().suffixes.keyvaultDns, 'vault', 'vaultcore'))]",
-              "[format('privatelink.monitor.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
-              "[format('privatelink.ods.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
-              "[format('privatelink.oms.opinsights.{0}', coalesce(variables('privateDnsZoneSuffixes_Monitor')[environment().name], variables('cloudSuffix')))]",
-              "[format('privatelink.{0}.backup.windowsazure.{1}', parameters('recoveryServicesGeo'), coalesce(variables('privateDnsZoneSuffixes_Backup')[environment().name], variables('cloudSuffix')))]"
-            ],
-            "privateDnsZoneSuffixes_AzureAutomation": {
-              "AzureCloud": "net",
-              "AzureUSGovernment": "us",
-              "USNat": null,
-              "USSec": null
-            },
-            "privateDnsZoneSuffixes_AzureVirtualDesktop": {
-              "AzureCloud": "microsoft.com",
-              "AzureUSGovernment": "azure.us",
-              "USNat": null,
-              "USSec": null
-            },
-            "privateDnsZoneSuffixes_AzureWebSites": {
-              "AzureCloud": "azurewebsites.net",
-              "AzureUSGovernment": "azurewebsites.us",
-              "USNat": null,
-              "USSec": null
-            },
-            "privateDnsZoneSuffixes_Backup": {
-              "AzureCloud": "com",
-              "AzureUSGovernment": "us",
-              "USNat": null,
-              "USSec": null
-            },
-            "privateDnsZoneSuffixes_Monitor": {
-              "AzureCloud": "azure.com",
-              "AzureUSGovernment": "azure.us",
-              "USNat": null,
-              "USSec": null
-            }
-          },
-          "resources": [
-            {
-              "copy": {
-                "name": "privateDnsZones",
-                "count": "[length(variables('privateDnsZoneNames'))]"
-              },
-              "type": "Microsoft.Network/privateDnsZones",
-              "apiVersion": "2020-06-01",
-              "name": "[variables('privateDnsZoneNames')[copyIndex()]]",
-              "location": "global",
-              "tags": "[coalesce(tryGet(parameters('tags'), 'Microsoft.Network/privateDnsZones'), createObject())]"
-            },
-            {
-              "copy": {
-                "name": "virtualNetworkLinks",
-                "count": "[length(variables('privateDnsZoneNames'))]"
-              },
-              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
-              "apiVersion": "2018-09-01",
-              "name": "[format('{0}/{1}', variables('privateDnsZoneNames')[copyIndex()], last(split(parameters('vnetId'), '/')))]",
-              "location": "global",
-              "properties": {
-                "registrationEnabled": false,
-                "virtualNetwork": {
-                  "id": "[parameters('vnetId')]"
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneNames')[copyIndex()])]"
               ]
             }
           ]
