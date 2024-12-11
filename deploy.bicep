@@ -360,7 +360,7 @@ module addsNetworking 'networking/spokeNetworking.bicep' = {
   scope: resourceGroup(resourceGroups[2])
   params: {
     deploymentSuffix: deploymentSuffix
-    dnsServers: addsServerAddresses
+    dnsServers: []
     fwIPAddress: hubNetworking.outputs.firewallIp
     hubVnetResourceId: hubNetworking.outputs.hubVnetResourceId
     location: location

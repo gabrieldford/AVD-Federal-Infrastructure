@@ -60,7 +60,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-03-01' = {
         vnetAddressPrefix
       ]
     }
-    dhcpOptions: {
+    dhcpOptions: empty(dnsServers) ? null : {
       dnsServers: dnsServers
     }
     subnets: snets

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "1569697180027014360"
+      "templateHash": "2569970420957558429"
     }
   },
   "parameters": {
@@ -1556,7 +1556,7 @@
             "value": "[variables('deploymentSuffix')]"
           },
           "dnsServers": {
-            "value": "[variables('addsServerAddresses')]"
+            "value": []
           },
           "fwIPAddress": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[0]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value]"
@@ -1709,7 +1709,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "9368462538948242853"
+              "templateHash": "13603633652394064339"
             }
           },
           "parameters": {
@@ -1794,9 +1794,7 @@
                     "[parameters('vnetAddressPrefix')]"
                   ]
                 },
-                "dhcpOptions": {
-                  "dnsServers": "[parameters('dnsServers')]"
-                },
+                "dhcpOptions": "[if(empty(parameters('dnsServers')), null(), createObject('dnsServers', parameters('dnsServers')))]",
                 "subnets": "[variables('snets')]"
               },
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/virtualNetworks'), createObject())]",
@@ -2066,7 +2064,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "9368462538948242853"
+              "templateHash": "13603633652394064339"
             }
           },
           "parameters": {
@@ -2151,9 +2149,7 @@
                     "[parameters('vnetAddressPrefix')]"
                   ]
                 },
-                "dhcpOptions": {
-                  "dnsServers": "[parameters('dnsServers')]"
-                },
+                "dhcpOptions": "[if(empty(parameters('dnsServers')), null(), createObject('dnsServers', parameters('dnsServers')))]",
                 "subnets": "[variables('snets')]"
               },
               "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Network/virtualNetworks'), createObject())]",
