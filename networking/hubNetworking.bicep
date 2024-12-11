@@ -717,7 +717,7 @@ resource azureFirewall 'Microsoft.Network/azureFirewalls@2023-02-01' = {
         name: 'azureFirewallIpConfig'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[0].id
+            id: filter(vnet.properties.subnets, subnet => subnet.name == 'AzureFirewallSubnet')[0].id
           }
           publicIPAddress: {
             id: firewallPublicIp.id
@@ -744,7 +744,7 @@ resource azureBastion 'Microsoft.Network/bastionHosts@2023-02-01' = {
         name: 'bastionIpConfig'
         properties: {
           subnet: {
-            id: vnet.properties.subnets[1].id
+            id: filter(vnet.properties.subnets, subnet => subnet.name == 'AzureBastionSubnet')[0].id
           }
           publicIPAddress: {
             id: bastionPublicIp.id

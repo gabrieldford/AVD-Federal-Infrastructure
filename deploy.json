@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "18369946718579621129"
+      "templateHash": "1569697180027014360"
     }
   },
   "parameters": {
@@ -711,7 +711,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "14799893597759813108"
+              "templateHash": "7123935518381539307"
             }
           },
           "parameters": {
@@ -1478,7 +1478,7 @@
                     "name": "azureFirewallIpConfig",
                     "properties": {
                       "subnet": {
-                        "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-02-01').subnets[0].id]"
+                        "id": "[filter(reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-02-01').subnets, lambda('subnet', equals(lambdaVariables('subnet').name, 'AzureFirewallSubnet')))[0].id]"
                       },
                       "publicIPAddress": {
                         "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]"
@@ -1509,7 +1509,7 @@
                     "name": "bastionIpConfig",
                     "properties": {
                       "subnet": {
-                        "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-02-01').subnets[1].id]"
+                        "id": "[filter(reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-02-01').subnets, lambda('subnet', equals(lambdaVariables('subnet').name, 'AzureBastionSubnet')))[0].id]"
                       },
                       "publicIPAddress": {
                         "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('bastionPublicIpName'))]"
