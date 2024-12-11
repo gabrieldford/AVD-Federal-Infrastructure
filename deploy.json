@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "4603156758679196165"
+      "templateHash": "15196340905193086956"
     }
   },
   "parameters": {
@@ -462,6 +462,120 @@
     "addsServerAddresses": [
       "10.0.1.4"
     ],
+    "addsNsgRules": [
+      {
+        "name": "DNS-TCP",
+        "properties": {
+          "priority": 100,
+          "access": "Allow",
+          "description": "DNS-TCP",
+          "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+          "direction": "Inbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "53",
+          "protocol": "Tcp",
+          "sourceAddressPrefixes": [
+            "[variables('firewallSubnetPrefix')]",
+            "[variables('addsVnetAddressPrefix')]"
+          ]
+        }
+      },
+      {
+        "name": "DNS-UDP",
+        "properties": {
+          "priority": 110,
+          "access": "Allow",
+          "description": "DNS-UDP",
+          "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+          "direction": "Inbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "53",
+          "protocol": "Udp",
+          "sourceAddressPrefixes": [
+            "[variables('firewallSubnetPrefix')]",
+            "[variables('addsVnetAddressPrefix')]"
+          ]
+        }
+      },
+      {
+        "name": "DomainServices-TCP",
+        "properties": {
+          "priority": 120,
+          "access": "Allow",
+          "description": "Domain Services (TCP)",
+          "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+          "direction": "Inbound",
+          "sourcePortRange": "*",
+          "destinationPortRanges": [
+            "88",
+            "123",
+            "135",
+            "389",
+            "445",
+            "636",
+            "3268",
+            "3269",
+            "49152-65535"
+          ],
+          "protocol": "Tcp",
+          "sourceAddressPrefixes": [
+            "[variables('addsVnetAddressPrefix')]",
+            "[variables('avdVnetAddressPrefix')]"
+          ]
+        }
+      },
+      {
+        "name": "DomainServices-UDP",
+        "properties": {
+          "priority": 130,
+          "access": "Allow",
+          "description": "Domain Services (UDP)",
+          "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+          "direction": "Inbound",
+          "sourcePortRange": "*",
+          "destinationPortRanges": [
+            "88",
+            "389"
+          ],
+          "protocol": "Udp",
+          "sourceAddressPrefixes": [
+            "[variables('addsVnetAddressPrefix')]",
+            "[variables('avdVnetAddressPrefix')]"
+          ]
+        }
+      },
+      {
+        "name": "RDP",
+        "properties": {
+          "priority": 140,
+          "access": "Allow",
+          "description": "RDP",
+          "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+          "direction": "Inbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "3389",
+          "protocol": "Tcp",
+          "sourceAddressPrefixes": [
+            "[variables('addsVnetAddressPrefix')]",
+            "[variables('bastionSubnetPrefix')]"
+          ]
+        }
+      },
+      {
+        "name": "DenyAllCustomInbound",
+        "properties": {
+          "priority": 4000,
+          "access": "Deny",
+          "description": "Deny all inbound traffic not explicitly allowed",
+          "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
+          "direction": "Inbound",
+          "sourcePortRange": "*",
+          "destinationPortRange": "*",
+          "protocol": "*",
+          "sourceAddressPrefix": "*"
+        }
+      }
+    ],
     "addsSubnets": [
       {
         "name": "snet-adds",
@@ -639,7 +753,7 @@
       "apiVersion": "2024-03-01",
       "name": "[variables('resourceGroups')[copyIndex()]]",
       "location": "[parameters('location')]",
-      "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Resources/ResourceGroups'), createObject())]"
+      "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Resources/resourceGroups'), createObject())]"
     },
     {
       "type": "Microsoft.Resources/deployments",
@@ -835,7 +949,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "6917905959792407744"
+              "templateHash": "2569991961554706851"
             }
           },
           "parameters": {
@@ -1200,7 +1314,7 @@
                       },
                       {
                         "ruleType": "NetworkRule",
-                        "name": "Agent Traffic (1)",
+                        "name": "Azure Monitor Traffic Tagged Traffic",
                         "ipProtocols": [
                           "TCP"
                         ],
@@ -1217,7 +1331,7 @@
                       },
                       {
                         "ruleType": "NetworkRule",
-                        "name": "Agent Traffic (2)",
+                        "name": "Agent Monitor FQDN Traffic",
                         "ipProtocols": [
                           "TCP"
                         ],
@@ -1663,6 +1777,7 @@
               "scope": "[format('Microsoft.Network/azureFirewalls/{0}', parameters('firewallName'))]",
               "name": "[format('{0}-diagnosticSettings', parameters('firewallName'))]",
               "properties": {
+                "logAnalyticsDestinationType": "Dedicated",
                 "workspaceId": "[parameters('logAnalyticsWorkspaceId')]",
                 "logs": [
                   {
@@ -1758,120 +1873,7 @@
             "value": "[format('nsg-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"
           },
           "nsgSecurityRules": {
-            "value": [
-              {
-                "name": "DNS-TCP",
-                "properties": {
-                  "priority": 100,
-                  "access": "Allow",
-                  "description": "DNS-TCP",
-                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
-                  "direction": "Inbound",
-                  "sourcePortRange": "*",
-                  "destinationPortRange": "53",
-                  "protocol": "Tcp",
-                  "sourceAddressPrefixes": [
-                    "[variables('addsVnetAddressPrefix')]",
-                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
-                  ]
-                }
-              },
-              {
-                "name": "DNS-UDP",
-                "properties": {
-                  "priority": 110,
-                  "access": "Allow",
-                  "description": "DNS-UDP",
-                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
-                  "direction": "Inbound",
-                  "sourcePortRange": "*",
-                  "destinationPortRange": "53",
-                  "protocol": "Udp",
-                  "sourceAddressPrefixes": [
-                    "[variables('addsVnetAddressPrefix')]",
-                    "[format('{0}/32', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.firewallIp.value)]"
-                  ]
-                }
-              },
-              {
-                "name": "DomainServices-TCP",
-                "properties": {
-                  "priority": 120,
-                  "access": "Allow",
-                  "description": "Domain Services (TCP)",
-                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
-                  "direction": "Inbound",
-                  "sourcePortRange": "*",
-                  "destinationPortRanges": [
-                    "88",
-                    "123",
-                    "135",
-                    "389",
-                    "445",
-                    "636",
-                    "3268",
-                    "3269",
-                    "49152-65535"
-                  ],
-                  "protocol": "Tcp",
-                  "sourceAddressPrefixes": [
-                    "[variables('addsVnetAddressPrefix')]",
-                    "[variables('avdVnetAddressPrefix')]"
-                  ]
-                }
-              },
-              {
-                "name": "DomainServices-UDP",
-                "properties": {
-                  "priority": 130,
-                  "access": "Allow",
-                  "description": "Domain Services (UDP)",
-                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
-                  "direction": "Inbound",
-                  "sourcePortRange": "*",
-                  "destinationPortRanges": [
-                    "88",
-                    "389"
-                  ],
-                  "protocol": "Udp",
-                  "sourceAddressPrefixes": [
-                    "[variables('addsVnetAddressPrefix')]",
-                    "[variables('avdVnetAddressPrefix')]"
-                  ]
-                }
-              },
-              {
-                "name": "RDP",
-                "properties": {
-                  "priority": 140,
-                  "access": "Allow",
-                  "description": "RDP",
-                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
-                  "direction": "Inbound",
-                  "sourcePortRange": "*",
-                  "destinationPortRange": "3389",
-                  "protocol": "Tcp",
-                  "sourceAddressPrefixes": [
-                    "[variables('addsVnetAddressPrefix')]",
-                    "[variables('bastionSubnetPrefix')]"
-                  ]
-                }
-              },
-              {
-                "name": "DenyAllCustomInbound",
-                "properties": {
-                  "priority": 4000,
-                  "access": "Deny",
-                  "description": "Deny all inbound traffic not explicitly allowed",
-                  "destinationAddressPrefix": "[variables('addsVnetAddressPrefix')]",
-                  "direction": "Inbound",
-                  "sourcePortRange": "*",
-                  "destinationPortRange": "*",
-                  "protocol": "*",
-                  "sourceAddressPrefix": "*"
-                }
-              }
-            ]
+            "value": "[variables('addsNsgRules')]"
           },
           "routeTableName": {
             "value": "[format('rt-adds-{0}', variables('locations')[parameters('location')].abbreviation)]"

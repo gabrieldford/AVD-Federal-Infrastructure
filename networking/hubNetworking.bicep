@@ -315,7 +315,7 @@ resource ruleCollectionGroup_AVD_Outbound 'Microsoft.Network/firewallPolicies/ru
           }
           {
             ruleType: 'NetworkRule'
-            name: 'Agent Traffic (1)'
+            name: 'Azure Monitor Traffic Tagged Traffic'
             ipProtocols: [
               'TCP'
             ]
@@ -332,7 +332,7 @@ resource ruleCollectionGroup_AVD_Outbound 'Microsoft.Network/firewallPolicies/ru
           }
           {
             ruleType: 'NetworkRule'
-            name: 'Agent Traffic (2)'
+            name: 'Agent Monitor FQDN Traffic'
             ipProtocols: [
               'TCP'
             ]
@@ -772,6 +772,7 @@ resource azureFirewallDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05
   name: '${firewallName}-diagnosticSettings'
   scope: azureFirewall
   properties: {
+    logAnalyticsDestinationType: 'Dedicated'
     workspaceId: logAnalyticsWorkspaceId
     logs: [
       {

@@ -49,8 +49,8 @@ var addsNsgRules = [
       destinationPortRange: '53'
       protocol: 'Tcp'
       sourceAddressPrefixes: [
+        firewallSubnetPrefix
         addsVnetAddressPrefix
-        '${hubNetworking.outputs.firewallIp}/32'
       ]
     }
   }
@@ -66,8 +66,8 @@ var addsNsgRules = [
       destinationPortRange: '53'
       protocol: 'Udp'
       sourceAddressPrefixes: [
+        firewallSubnetPrefix
         addsVnetAddressPrefix
-        '${hubNetworking.outputs.firewallIp}/32'
       ]
     }
   }
@@ -327,7 +327,7 @@ var resourceGroups = [
 resource rgs 'Microsoft.Resources/resourceGroups@2024-03-01' = [for rg in resourceGroups: {
   name: rg
   location: location
-  tags: tagsByResourceType[?'Microsoft.Resources/ResourceGroups'] ?? {}
+  tags: tagsByResourceType[?'Microsoft.Resources/resourceGroups'] ?? {}
 }]
 
 module monitoring 'monitoring/monitoring.bicep' = {
