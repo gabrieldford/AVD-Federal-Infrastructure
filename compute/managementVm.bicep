@@ -12,10 +12,10 @@ param tagsByResourceType object
 param vmAdminUserName string
 @secure()
 param vmAdminPassword string
+param vmName string
 param vmSize string
 
 var networkInterfaceName = 'nic'
-var vmName = 'managementVm-1'
 var vmNicName = '${vmName}-${networkInterfaceName}'
 var osDiskName = '${vmName}-osdisk'
 

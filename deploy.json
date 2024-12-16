@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "17891490696624797873"
+      "templateHash": "11488231120029328682"
     }
   },
   "parameters": {
@@ -739,6 +739,7 @@
     "firewallSnetAddressPrefix": "10.0.0.0/26",
     "bastionSnetAddressPrefix": "10.0.0.64/26",
     "gatewaySnetAddressPrefix": "10.0.0.192/26",
+    "mgmtVmName": "managementVm-1",
     "deploymentSuffix": "[substring(deployment().name, sub(length(deployment().name), 14), 12)]",
     "locations": "[variables('$fxv#0')[environment().name]]",
     "resourceGroups": [
@@ -3068,6 +3069,9 @@
           "tagsByResourceType": {
             "value": "[parameters('tagsByResourceType')]"
           },
+          "vmName": {
+            "value": "[variables('mgmtVmName')]"
+          },
           "vmSize": {
             "value": "[parameters('vmSize')]"
           }
@@ -3079,7 +3083,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "1125188649048103035"
+              "templateHash": "10322949857494938313"
             }
           },
           "parameters": {
@@ -3120,15 +3124,17 @@
             "vmAdminPassword": {
               "type": "securestring"
             },
+            "vmName": {
+              "type": "string"
+            },
             "vmSize": {
               "type": "string"
             }
           },
           "variables": {
             "networkInterfaceName": "nic",
-            "vmName": "managementVm-1",
-            "vmNicName": "[format('{0}-{1}', variables('vmName'), variables('networkInterfaceName'))]",
-            "osDiskName": "[format('{0}-osdisk', variables('vmName'))]"
+            "vmNicName": "[format('{0}-{1}', parameters('vmName'), variables('networkInterfaceName'))]",
+            "osDiskName": "[format('{0}-osdisk', parameters('vmName'))]"
           },
           "resources": [
             {
@@ -3158,7 +3164,7 @@
             {
               "type": "Microsoft.Compute/virtualMachines",
               "apiVersion": "2024-03-01",
-              "name": "[variables('vmName')]",
+              "name": "[parameters('vmName')]",
               "location": "[parameters('location')]",
               "identity": {
                 "type": "SystemAssigned"
@@ -3174,7 +3180,7 @@
                 },
                 "licenseType": "Windows_Client",
                 "osProfile": {
-                  "computerName": "[variables('vmName')]",
+                  "computerName": "[parameters('vmName')]",
                   "adminUsername": "[parameters('vmAdminUserName')]",
                   "adminPassword": "[parameters('vmAdminPassword')]",
                   "windowsConfiguration": {
@@ -3222,7 +3228,7 @@
             {
               "type": "Microsoft.Compute/virtualMachines/extensions",
               "apiVersion": "2019-07-01",
-              "name": "[format('{0}/{1}', variables('vmName'), 'JsonADDomainExtension')]",
+              "name": "[format('{0}/{1}', parameters('vmName'), 'JsonADDomainExtension')]",
               "location": "[parameters('location')]",
               "properties": {
                 "publisher": "Microsoft.Compute",
@@ -3240,7 +3246,7 @@
                 }
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
               ]
             }
           ]

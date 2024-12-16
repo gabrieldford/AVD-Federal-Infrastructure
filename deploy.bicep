@@ -323,6 +323,7 @@ var bastionSnetAddressPrefix = '10.0.0.64/26'
 
 var gatewaySnetAddressPrefix = '10.0.0.192/26'
 
+var mgmtVmName = 'managementVm-1'
 
 var deploymentSuffix = substring(deployment().name, length(deployment().name) - 14, 12)
 
@@ -488,6 +489,7 @@ module managementVm 'compute/managementVm.bicep' = {
     vmAdminUserName: 'vmAdmin'
     subnetResourceId: addsNetworking.outputs.subnetResourceIds[1]
     tagsByResourceType: tagsByResourceType
+    vmName: mgmtVmName
     vmSize: vmSize
   }
   dependsOn: [

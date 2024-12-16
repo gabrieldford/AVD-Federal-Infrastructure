@@ -43,7 +43,6 @@ param usersArray array = [
 ]
 param vmSize string
 
-
 var networkInterfaceName = 'nic'
 var addcVMNameSuffix = '-dc1'
 var companyNamePrefix = split(adDomainName, '.')[0]
