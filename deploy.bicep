@@ -3,7 +3,7 @@ targetScope = 'subscription'
 param location string = deployment().location
 
 @description('This is the location in which all the linked templates are stored.')
-param assetLocation string = 'https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/refs/heads/main/domainController/DSC/adDSC.zip'
+param assetLocation string = 'https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/refs/heads/main/compute/DSC/adDSC.zip'
 
 @description('Username to set for the local User. Cannot be "Administrator", "root" and possibly other such common account names. ')
 param adAdminUsername string = 'ADAdmin'
@@ -486,7 +486,7 @@ module managementVm 'compute/managementVm.bicep' = {
     imageSku: mgmtVmImageSku
     vmAdminPassword: adAdminPassword
     vmAdminUserName: 'vmAdmin'
-    subnetResourceId: hubNetworking.outputs.hubVnetResourceId
+    subnetResourceId: addsNetworking.outputs.subnetResourceIds[1]
     tagsByResourceType: tagsByResourceType
     vmSize: vmSize
   }

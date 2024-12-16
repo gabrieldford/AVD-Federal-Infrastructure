@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "17950775638067766344"
+      "templateHash": "17891490696624797873"
     }
   },
   "parameters": {
@@ -15,7 +15,7 @@
     },
     "assetLocation": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/refs/heads/main/domainController/DSC/adDSC.zip",
+      "defaultValue": "https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/refs/heads/main/compute/DSC/adDSC.zip",
       "metadata": {
         "description": "This is the location in which all the linked templates are stored."
       }
@@ -3063,7 +3063,7 @@
             "value": "vmAdmin"
           },
           "subnetResourceId": {
-            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.hubVnetResourceId.value]"
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix'))), '2022-09-01').outputs.subnetResourceIds.value[1]]"
           },
           "tagsByResourceType": {
             "value": "[parameters('tagsByResourceType')]"
@@ -3247,8 +3247,8 @@
         }
       },
       "dependsOn": [
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-servers-{0}', variables('deploymentSuffix')))]",
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[1]), 'Microsoft.Resources/deployments', format('hub-networking-{0}', variables('deploymentSuffix')))]"
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-networking-{0}', variables('deploymentSuffix')))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('resourceGroups')[2]), 'Microsoft.Resources/deployments', format('adds-servers-{0}', variables('deploymentSuffix')))]"
       ]
     }
   ]
