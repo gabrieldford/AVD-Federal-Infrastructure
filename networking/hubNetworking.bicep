@@ -7,13 +7,13 @@ param firewallPolicyName string
 param firewallSubnetPrefix string
 param bastionSubnetPrefix string
 param gatewaySubnetPrefix string
+param location string
 param logAnalyticsWorkspaceId string
 param vnetName string
 param firewallName string
 param firewallPublicIpName string
 param bastionName string
 param bastionPublicIpName string
-param location string
 param tagsByResourceType object
 
 resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {

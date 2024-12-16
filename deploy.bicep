@@ -6,11 +6,11 @@ param location string = deployment().location
 param assetLocation string = 'https://raw.githubusercontent.com/shawntmeyer/AVDFedRockstarTraining/refs/heads/main/domainController/DSC/adDSC.zip'
 
 @description('Username to set for the local User. Cannot be "Administrator", "root" and possibly other such common account names. ')
-param adminUsername string = 'ADAdmin'
+param adAdminUsername string = 'ADAdmin'
 
 @description('Password for the local administrator account. Cannot be "P@ssw0rd" and possibly other such common passwords. Must be 8 characters long and three of the following complexity requirements: uppercase, lowercase, number, special character')
 @secure()
-param adminPassword string
+param adAdminPassword string
 
 @description('IMPORTANT: Two-part internal AD name - short/NB name will be first part (\'contoso\'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur.')
 param adDomainName string
@@ -33,9 +33,14 @@ param vmSize string = 'Standard_B2ms'
 
 var addsVnetAddressPrefix = '10.0.1.0/24'
 
+var addsServersSnetAddressPrefix = '10.0.1.0/25'
+
+var addsMgmtSnetAddressPrefix = '10.0.1.128/25'
+
 var addsServerAddresses = [
     '10.0.1.4'
 ]
+
 var addsNsgRules = [
   {
     name: 'DNS-TCP'
@@ -43,13 +48,13 @@ var addsNsgRules = [
       priority: 100
       access: 'Allow'
       description: 'DNS-TCP'
-      destinationAddressPrefix: addsVnetAddressPrefix
+      destinationAddressPrefix: addsServersSnetAddressPrefix
       direction: 'Inbound'
       sourcePortRange: '*'
       destinationPortRange: '53'
       protocol: 'Tcp'
       sourceAddressPrefixes: [
-        firewallSubnetPrefix
+        firewallSnetAddressPrefix
         addsVnetAddressPrefix
       ]
     }
@@ -60,13 +65,13 @@ var addsNsgRules = [
       priority: 110
       access: 'Allow'
       description: 'DNS-UDP'
-      destinationAddressPrefix: addsVnetAddressPrefix
+      destinationAddressPrefix: addsServersSnetAddressPrefix
       direction: 'Inbound'
       sourcePortRange: '*'
       destinationPortRange: '53'
       protocol: 'Udp'
       sourceAddressPrefixes: [
-        firewallSubnetPrefix
+        firewallSnetAddressPrefix
         addsVnetAddressPrefix
       ]
     }
@@ -77,7 +82,7 @@ var addsNsgRules = [
       priority: 120
       access: 'Allow'
       description: 'Domain Services (TCP)'
-      destinationAddressPrefix: addsVnetAddressPrefix
+      destinationAddressPrefix: addsServersSnetAddressPrefix
       direction: 'Inbound'
       sourcePortRange: '*'
       destinationPortRanges: [
@@ -104,7 +109,7 @@ var addsNsgRules = [
       priority: 130
       access: 'Allow'
       description: 'Domain Services (UDP)'
-      destinationAddressPrefix: addsVnetAddressPrefix
+      destinationAddressPrefix: addsServersSnetAddressPrefix
       direction: 'Inbound'
       sourcePortRange: '*'
       destinationPortRanges: [
@@ -131,7 +136,7 @@ var addsNsgRules = [
       protocol: 'Tcp'
       sourceAddressPrefixes: [
         addsVnetAddressPrefix
-        bastionSubnetPrefix
+        bastionSnetAddressPrefix
       ]
     }
   }
@@ -150,12 +155,18 @@ var addsNsgRules = [
     }
   }  
 ]
+
 var addsSubnets = [
   {
     name: 'snet-adds'
-    addressPrefix: addsVnetAddressPrefix
+    addressPrefix: addsServersSnetAddressPrefix
+  }
+  {
+    name: 'snet-adds-mgmt'
+    addressPrefix: addsMgmtSnetAddressPrefix
   }
 ]
+
 var avdNsgRules = [
   {
     name: 'AVDServiceTraffic'
@@ -306,11 +317,12 @@ var avdSubnets = [
 
 var hubVnetAddressPrefix = '10.0.0.0/24'
 
-var bastionSubnetPrefix = '10.0.0.0/26'
+var firewallSnetAddressPrefix = '10.0.0.0/26'
 
-var firewallSubnetPrefix = '10.0.0.64/26'
+var bastionSnetAddressPrefix = '10.0.0.64/26'
 
-var gatewaySubnetPrefix = '10.0.0.128/27'
+var gatewaySnetAddressPrefix = '10.0.0.192/26'
+
 
 var deploymentSuffix = substring(deployment().name, length(deployment().name) - 14, 12)
 
@@ -322,6 +334,7 @@ var resourceGroups = [
   'rg-adds-${locations[location].abbreviation}'
   'rg-privateDnsZones-${locations[location].abbreviation}'
   'rg-avd-networking-${locations[location].abbreviation}'
+  'rg-management-${locations[location].abbreviation}'
 ]
 
 resource rgs 'Microsoft.Resources/resourceGroups@2024-03-01' = [for rg in resourceGroups: {
@@ -360,11 +373,11 @@ module hubNetworking 'networking/hubNetworking.bicep' = {
     location: location
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     vnetName: 'vnet-hub-${locations[location].abbreviation}'
-    bastionSubnetPrefix: bastionSubnetPrefix
-    firewallSubnetPrefix: firewallSubnetPrefix
-    gatewaySubnetPrefix: gatewaySubnetPrefix
     dnsServers: addsServerAddresses
     tagsByResourceType: tagsByResourceType
+    bastionSubnetPrefix: bastionSnetAddressPrefix
+    firewallSubnetPrefix: firewallSnetAddressPrefix
+    gatewaySubnetPrefix: gatewaySnetAddressPrefix
   }
   dependsOn: [
     rgs
@@ -436,13 +449,13 @@ module avdNetworking 'networking/spokeNetworking.bicep' = {
   ]
 }
 
-module domainController 'domainController/domainController.bicep' = {
+module domainController 'compute/domainController.bicep' = {
   name: 'adds-servers-${deploymentSuffix}'
   scope: resourceGroup(resourceGroups[2])
   params: {
     adDomainName: adDomainName
-    adminPassword: adminPassword
-    adminUsername: adminUsername
+    adminPassword: adAdminPassword
+    adminUsername: adAdminUsername
     assetLocation: assetLocation
     defaultUserPassword: defaultUserPassword
     entraIdPrimaryOrCustomDomainName: entraIdPrimaryOrCustomDomainName
@@ -453,5 +466,24 @@ module domainController 'domainController/domainController.bicep' = {
   }
   dependsOn: [
     rgs
+  ]
+}
+
+module managementVm 'compute/managementVm.bicep' = {
+  name: 'management-vm-${deploymentSuffix}'
+  scope: resourceGroup(resourceGroups[5])
+  params: {
+    dnsServers: addsServerAddresses
+    domainJoinUserName: '${adAdminUsername}@${adDomainName}'
+    domainJoinUserPassword: adAdminPassword
+    domainName: adDomainName
+    vmAdminPassword: adAdminPassword
+    vmAdminUserName: 'vmAdmin'
+    subnetResourceId: hubNetworking.outputs.hubVnetResourceId
+    tagsByResourceType: tagsByResourceType
+    vmSize: vmSize
+  }
+  dependsOn: [
+    domainController
   ]
 }
