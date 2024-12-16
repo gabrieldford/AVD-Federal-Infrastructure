@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "4993428284589969842"
+      "templateHash": "17950775638067766344"
     }
   },
   "parameters": {
@@ -796,7 +796,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "6340963796803944935"
+              "templateHash": "9041056934079117559"
             }
           },
           "parameters": {
@@ -853,14 +853,14 @@
                       "Microsoft-Event"
                     ],
                     "destinations": [
-                      "la-workspace"
+                      "[parameters('logAnalyticsWorkspaceName')]"
                     ]
                   }
                 ],
                 "destinations": {
                   "logAnalytics": [
                     {
-                      "name": "la-workspace",
+                      "name": "[parameters('logAnalyticsWorkspaceName')]",
                       "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
                     }
                   ]

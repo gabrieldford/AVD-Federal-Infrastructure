@@ -39,14 +39,14 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
           'Microsoft-Event'
         ]
         destinations: [
-          'la-workspace'
+          logAnalyticsWorkspaceName
         ]
       }
     ]
     destinations: {
       logAnalytics: [
         {
-          name: 'la-workspace'
+          name: logAnalyticsWorkspaceName
           workspaceResourceId: logAnalyticsWorkspace.id
         }
       ]
