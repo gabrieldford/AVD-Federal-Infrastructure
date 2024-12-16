@@ -3,6 +3,9 @@ param domainJoinUserName string
 @secure()
 param domainJoinUserPassword string
 param domainName string
+param imagePublisher string
+param imageOffer string
+param imageSku string
 param location string = resourceGroup().location
 param subnetResourceId string
 param tagsByResourceType object
@@ -66,9 +69,9 @@ resource vm 'Microsoft.Compute/virtualMachines@2024-03-01' = {
     }
     storageProfile: {
       imageReference: {
-        publisher: 'MicrosoftWindowsDesktop'
-        offer: 'Windows-11'
-        sku: 'win11-24h2-ent'
+        publisher: imagePublisher
+        offer: imageOffer
+        sku: imageSku
         version: 'latest'
       }
       osDisk: {

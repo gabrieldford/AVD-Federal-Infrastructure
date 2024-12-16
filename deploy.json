@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "9865353511661278191"
+      "templateHash": "4993428284589969842"
     }
   },
   "parameters": {
@@ -748,7 +748,10 @@
       "[format('rg-privateDnsZones-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-avd-networking-{0}', variables('locations')[parameters('location')].abbreviation)]",
       "[format('rg-management-{0}', variables('locations')[parameters('location')].abbreviation)]"
-    ]
+    ],
+    "mgmtVmImagePublisher": "MicrosoftWindowsDesktop",
+    "mgmtVmImageOffer": "Windows-11",
+    "mgmtVmImageSku": "win11-24h2-ent"
   },
   "resources": [
     {
@@ -3044,6 +3047,15 @@
           "domainName": {
             "value": "[parameters('adDomainName')]"
           },
+          "imageOffer": {
+            "value": "[variables('mgmtVmImageOffer')]"
+          },
+          "imagePublisher": {
+            "value": "[variables('mgmtVmImagePublisher')]"
+          },
+          "imageSku": {
+            "value": "[variables('mgmtVmImageSku')]"
+          },
           "vmAdminPassword": {
             "value": "[parameters('adAdminPassword')]"
           },
@@ -3067,7 +3079,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "7141529779692813779"
+              "templateHash": "1125188649048103035"
             }
           },
           "parameters": {
@@ -3081,6 +3093,15 @@
               "type": "securestring"
             },
             "domainName": {
+              "type": "string"
+            },
+            "imagePublisher": {
+              "type": "string"
+            },
+            "imageOffer": {
+              "type": "string"
+            },
+            "imageSku": {
               "type": "string"
             },
             "location": {
@@ -3163,9 +3184,9 @@
                 },
                 "storageProfile": {
                   "imageReference": {
-                    "publisher": "MicrosoftWindowsDesktop",
-                    "offer": "Windows-11",
-                    "sku": "win11-24h2-ent",
+                    "publisher": "[parameters('imagePublisher')]",
+                    "offer": "[parameters('imageOffer')]",
+                    "sku": "[parameters('imageSku')]",
                     "version": "latest"
                   },
                   "osDisk": {

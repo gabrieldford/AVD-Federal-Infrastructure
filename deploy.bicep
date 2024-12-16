@@ -337,6 +337,10 @@ var resourceGroups = [
   'rg-management-${locations[location].abbreviation}'
 ]
 
+var mgmtVmImagePublisher = 'MicrosoftWindowsDesktop'
+var mgmtVmImageOffer = 'Windows-11'
+var mgmtVmImageSku = 'win11-24h2-ent'
+
 resource rgs 'Microsoft.Resources/resourceGroups@2024-03-01' = [for rg in resourceGroups: {
   name: rg
   location: location
@@ -477,6 +481,9 @@ module managementVm 'compute/managementVm.bicep' = {
     domainJoinUserName: '${adAdminUsername}@${adDomainName}'
     domainJoinUserPassword: adAdminPassword
     domainName: adDomainName
+    imageOffer: mgmtVmImageOffer
+    imagePublisher: mgmtVmImagePublisher
+    imageSku: mgmtVmImageSku
     vmAdminPassword: adAdminPassword
     vmAdminUserName: 'vmAdmin'
     subnetResourceId: hubNetworking.outputs.hubVnetResourceId

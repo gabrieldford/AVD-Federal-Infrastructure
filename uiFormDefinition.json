@@ -206,8 +206,8 @@
 			"location": "[steps('basics').scope.location.name]",
 			"subscriptionId": "[steps('basics').scope.subscription.id]",
 			"parameters": {
-				"adminUserName": "[steps('basics').users.adminUserName]",
-				"adminPassword": "[steps('basics').users.adminPassword]",
+				"adAdminUserName": "[steps('basics').users.adminUserName]",
+				"adAdminPassword": "[steps('basics').users.adminPassword]",
 				"defaultUserPassword": "[steps('basics').users.defaultUserPassword]",
 				"adDomainName": "[steps('basics').domainAndTenant.adDomainName]",
 				"entraIdPrimaryOrCustomDomainName": "[steps('basics').domainAndTenant.customUpnSuffix]",
