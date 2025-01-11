@@ -14,7 +14,6 @@
 #region Initialization
 [CmdletBinding()]
 param (
-    [Parameter()]
     [bool]$AIB = $true
 )
 
@@ -399,7 +398,7 @@ ForEach ($gpoFolder in $arrGPOFolders) {
     Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
 }
 
-If ($AIB) {
+If ($AIB -eq $True) {
     # Applying Azure Image Builder Exceptions
     Write-Log -message "Applying Azure Image Builder Exceptions."
     $appName = 'AzureImageBuilder-Exceptions'
