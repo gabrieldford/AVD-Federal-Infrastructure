@@ -261,21 +261,21 @@ Write-Log -category Info -message "Starting '$PSCommandPath'."
 
 If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
     $LGPOZip = Join-Path -Path $PSScriptRoot -ChildPath 'LGPO.zip'
-    If (Test-Path $LPGOZip) {
+    If (Test-Path $LGPOZip) {
         Write-Log -category Info -message "Expanding '$LGPO' to '$Script:TempDir'."
-        expand-archive -path "$lgpozip" -DestinationPath $Script:TempDir -force
+        expand-archive -path $LGPOZip -DestinationPath $Script:TempDir -force
         $algpoexe = Get-ChildItem -Path $Script:TempDir -filter 'lgpo.exe' -recurse
         If ($algpoexe.count -gt 0) {
-            $lgpoexe = $algpoexe[0].FullName
-            Write-Log -category Info -message "Copying '$lgpoexe' to '$env:SystemRoot\system32'."
-            Copy-Item -Path $lgpoexe -Destination "$env:SystemRoot\System32" -force        
+            $fileLGPO = $algpoexe[0].FullName
+            Write-Log -category Info -message "Copying '$fileLGPO' to '$env:SystemRoot\system32'."
+            Copy-Item -Path $fileLGPO -Destination "$env:SystemRoot\System32" -force        
         }
     } Else {
         $urlLGPO = 'https://download.microsoft.com/download/8/5/C/85C25433-A1B0-4FFA-9429-7E023E7DA8D8/LGPO.zip'
-        $fileLGPODownload = Get-InternetFile -Url $urlLGPO -OutputDirectory $Script:TempDir
+        $LGPOZip = Get-InternetFile -Url $urlLGPO -OutputDirectory $Script:TempDir
         $outputDir = Join-Path $Script:TempDir -ChildPath 'LGPO'
-        Expand-Archive -Path $fileLGPODownload -DestinationPath $outputDir
-        Remove-Item $fileLGPODownload -Force
+        Expand-Archive -Path $LGPOZip -DestinationPath $outputDir
+        Remove-Item $LGPOZip -Force
         $fileLGPO = (Get-ChildItem -Path $outputDir -file -Filter 'lgpo.exe' -Recurse)[0].FullName
         Write-Output "Copying `"$fileLGPO`" to System32"
         Copy-Item -Path $fileLGPO -Destination "$env:SystemRoot\System32" -Force
