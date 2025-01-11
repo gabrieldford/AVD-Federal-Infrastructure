@@ -12,6 +12,11 @@
 #>
 
 #region Initialization
+[CmdletBinding()]
+param (
+    [Parameter()]
+    [bool]$AIB = $true
+)
 
 $Script:FullName = $MyInvocation.MyCommand.Path
 $Script:File = $MyInvocation.MyCommand.Name
@@ -253,6 +258,86 @@ Function Set-BluetoothRadioStatus {
     }
 }
 
+Function Update-LocalGPOTextFile {
+    [CmdletBinding(DefaultParameterSetName = 'Set')]
+    Param (
+        [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Delete')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'DeleteAllValues')]
+        [ValidateSet('Computer', 'User')]
+        [string]$scope,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Delete')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'DeleteAllValues')]
+        [string]$RegistryKeyPath,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Delete')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'DeleteAllValues')]
+        [string]$RegistryValue,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
+        [AllowEmptyString()]
+        [string]$RegistryData,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
+        [ValidateSet('DWORD', 'String')]
+        [string]$RegistryType,
+        [Parameter(Mandatory = $false, ParameterSetName = 'Delete')]
+        [switch]$Delete,
+        [Parameter(Mandatory = $false, ParameterSetName = 'DeleteAllValues')]
+        [switch]$DeleteAllValues,
+        [string]$outputDir = "$Script:TempDir",
+        [string]$outfileprefix = $appName
+    )
+    Begin {
+        [string]${CmdletName} = $PSCmdlet.MyInvocation.MyCommand.Name
+    }
+    Process {
+        # Convert $RegistryType to UpperCase to prevent LGPO errors.
+        $ValueType = $RegistryType.ToUpper()
+        # Change String type to SZ for text file
+        If ($ValueType -eq 'STRING') { $ValueType = 'SZ' }
+        # Replace any incorrect registry entries for the format needed by text file.
+        $modified = $false
+        $SearchStrings = 'HKLM:\', 'HKCU:\', 'HKEY_CURRENT_USER:\', 'HKEY_LOCAL_MACHINE:\'
+        ForEach ($String in $SearchStrings) {
+            If ($RegistryKeyPath.StartsWith("$String") -and $modified -ne $true) {
+                $index = $String.Length
+                $RegistryKeyPath = $RegistryKeyPath.Substring($index, $RegistryKeyPath.Length - $index)
+                $modified = $true
+            }
+        }
+        
+        #Create the output file if needed.
+        $Outfile = "$OutputDir\$Outfileprefix-$Scope.txt"
+        If (-not (Test-Path -LiteralPath $Outfile)) {
+            If (-not (Test-Path -LiteralPath $OutputDir -PathType 'Container')) {
+                Try {
+                    $null = New-Item -Path $OutputDir -Type 'Directory' -Force -ErrorAction 'Stop'
+                }
+                Catch {}
+            }
+            $null = New-Item -Path $outputdir -Name "$OutFilePrefix-$Scope.txt" -ItemType File -ErrorAction Stop
+        }
+
+        Write-Verbose "${CmdletName}: Adding registry information to '$outfile' for LGPO.exe"
+        # Update file with information
+        Add-Content -Path $Outfile -Value $Scope
+        Add-Content -Path $Outfile -Value $RegistryKeyPath
+        Add-Content -Path $Outfile -Value $RegistryValue
+        If ($Delete) {
+            Add-Content -Path $Outfile -Value 'DELETE'
+        }
+        ElseIf ($DeleteAllValues) {
+            Add-Content -Path $Outfile -Value 'DELETEALLVALUES'
+        }
+        Else {
+            Add-Content -Path $Outfile -Value "$($ValueType):$RegistryData"
+        }
+        Add-Content -Path $Outfile -Value ""
+    }
+    End {        
+    }
+}
+
 #endregion
 
 #region Main
@@ -314,6 +399,17 @@ ForEach ($gpoFolder in $arrGPOFolders) {
     Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
 }
 
+If ($AIB) {
+    # Applying Azure Image Builder Exceptions
+    Write-Log -message "Applying Azure Image Builder Exceptions."
+    $appName = 'AzureImageBuilder-Exceptions'
+    #V-253418 Tje Windows Remote Management (WinRM) service must not use Basic authentication.
+    Update-LocalGPOTextFile -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowBasic' -Delete
+    #V-253419 The Windows Remote Management (WinRM) service must not allow unencrypted traffic.
+    Update-LocalGPOTextFile -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowUnencryptedTraffic' -Delete
+    $lgpo = Start-Process -FilePath -FilePath "$env:SystemRoot\System32\lgpo.exe" -ArgumentList "/t $Script:TempDir\$appName-Computer.txt" -Wait -PassThru
+    Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
+}
 #Disable Secondary Logon Service
 #WN10-00-000175
 Write-Log -message "WN10-00-000175/V-220732: Disabling the Secondary Logon Service."

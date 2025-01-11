@@ -310,6 +310,10 @@ var avdSubnets = [
     addressPrefix: '10.0.2.64/26'
   }
   {
+    name: 'snet-avd-imagebuilds'
+    addressPrefix: '10.0.2.176/28'
+  }
+  {
     name: 'snet-privateEndpoints'
     addressPrefix: '10.0.2.192/26'
   }
