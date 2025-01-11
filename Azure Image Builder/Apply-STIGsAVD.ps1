@@ -3,14 +3,18 @@
     This script uses the local group policy object tool (lgpo.exe) to apply the applicable DISA STIGs GPOs either downloaded directly from CyberCom or
     the files are contained with this script in the root of a folder.
 .NOTES
-    To use this script offline, download the lgpo tool from 'https://download.microsoft.com/download/8/5/C/85C25433-A1B0-4FFA-9429-7E023E7DA8D8/LGPO.zip' and extract 'lpgo.exe'
-    to the root of the folder where this script is located. Then download the latest STIG GPOs ZIP from 'https://public.cyber.mil/stigs/gpo' and copy the zip file to the root
+    To use this script offline, download the lgpo tool from 'https://download.microsoft.com/download/8/5/C/85C25433-A1B0-4FFA-9429-7E023E7DA8D8/LGPO.zip' and store it in the root of the folder where the script is located.'
+    to the root of the folder where this script is located. Then download the latest STIG GPOs ZIP from 'https://public.cyber.mil/stigs/gpo' and and save at at STIGs.zip in the root
     of the folder where this script is located.
 
     This script not only applies the GPO objects but it also applies some registry settings and other mitigations. Ensure that these other items still apply through the
     lifecycle of the script.
 #>
-
+[CmdletBinding()]
+param (
+    [Parameter()]
+    [bool]$AIB = $True
+)
 #region Initialization
 $Script:FullName = $MyInvocation.MyCommand.Path
 $Script:File = $MyInvocation.MyCommand.Name
@@ -18,10 +22,9 @@ $Script:Name=[System.IO.Path]::GetFileNameWithoutExtension($Script:File)
 $virtualMachine = Get-WmiObject -Class Win32_ComputerSystem | Where-Object {$_.Model -match 'Virtual'}
 $osCaption = (Get-WmiObject -Class Win32_OperatingSystem).caption
 If ($osCaption -match 'Windows 11') { $osVersion = 11 } Else { $osVersion = 10 }
-
 [String]$Script:LogDir = "$($env:SystemRoot)\Logs\Configuration"
 If (-not(Test-Path -Path $Script:LogDir)) {
-    New-Item -Path "$($env:SystemRoot)\Logs" -Name Configuration -ItemType Dir -Force
+    New-Item -Path $Script:LogDir -ItemType Dir -Force | Out-Null
 }
 $Script:TempDir = Join-Path -Path $env:Temp -ChildPath $Script:Name
 If (Test-Path -Path $Script:TempDir) {Remove-Item -Path $Script:TempDir -Recurse -ErrorAction SilentlyContinue}
@@ -154,6 +157,42 @@ Function Get-InternetUrl {
     }
 }
 
+Function Invoke-LGPO {
+    [CmdletBinding()]
+    Param (
+        [string]$InputDir = $Script:TempDir,
+        [string]$SearchTerm
+    )
+    Begin {
+        [string]${CmdletName} = $PSCmdlet.MyInvocation.MyCommand.Name
+    }
+    Process {
+        Write-Verbose "${CmdletName}: Gathering Registry text files for LGPO from '$InputDir'"
+        If ($SearchTerm) {
+            $InputFiles = Get-ChildItem -Path $InputDir -Filter "$SearchTerm*.txt"
+        }
+        Else {
+            $InputFiles = Get-ChildItem -Path $InputDir -Filter '*.txt'
+        }
+        ForEach ($RegistryFile in $inputFiles) {
+            $TxtFilePath = $RegistryFile.FullName
+            Write-Verbose "${CmdletName}: Now applying settings from '$txtFilePath' to Local Group Policy via LGPO.exe."
+            $lgporesult = Start-Process -FilePath 'lgpo.exe' -ArgumentList "/t `"$TxtFilePath`"" -Wait -PassThru
+            Write-Verbose "${CmdletName}: LGPO exitcode: '$($lgporesult.exitcode)'"
+        }
+        Write-Verbose "${CmdletName}: Gathering Security Templates files for LGPO from '$InputDir'"
+        $ConfigFile = Get-ChildItem -Path $InputDir -Filter '*.inf'
+        If ($ConfigFile) {
+            $ConfigFile = $ConfigFile.FullName
+            Write-Verbose "${CmdletName}: Now applying security settings from '$ConfigFile' to Local Security Policy via LGPO.exe."
+            $lgporesult = Start-Process -FilePath 'lgpo.exe' -ArgumentList "/s `"$ConfigFile`"" -Wait -PassThru
+            Write-Verbose "${CmdletName}: LGPO exitcode: '$($lgporesult.exitcode)'"
+        }
+    }
+    End {
+    }
+}
+
 function New-Log {
     <#
     .SYNOPSIS
@@ -278,7 +317,7 @@ Function Update-LocalGPOTextFile {
         [switch]$Delete,
         [Parameter(Mandatory = $false, ParameterSetName = 'DeleteAllValues')]
         [switch]$DeleteAllValues,
-        [string]$outputDir = "$Script:TempDir",
+        [string]$outputDir = $Script:TempDir,
         [string]$outfileprefix = $appName
     )
     Begin {
@@ -337,22 +376,22 @@ Function Update-LocalGPOTextFile {
 #region Main
 
 New-Log -Path $Script:LogDir
-Write-Log -category Info -message "Starting '$PSCommandPath'."
+Write-Log -message "Starting '$PSCommandPath'."
 
 If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
     $LGPOZip = Join-Path -Path $PSScriptRoot -ChildPath 'LGPO.zip'
-    If (Test-Path $LGPOZip) {
-        Write-Log -category Info -message "Expanding '$LGPOZip' to '$Script:TempDir'."
-        expand-archive -path $LGPOZip -DestinationPath $Script:TempDir -force
+    If (Test-Path -Path $LGPOZip) {
+        Write-Log -message "Expanding '$LGPOZip' to '$Script:TempDir'."
+        Expand-Archive -path $LGPOZip -DestinationPath $Script:TempDir -force
         $algpoexe = Get-ChildItem -Path $Script:TempDir -filter 'lgpo.exe' -recurse
         If ($algpoexe.count -gt 0) {
             $fileLGPO = $algpoexe[0].FullName
-            Write-Log -category Info -message "Copying '$fileLGPO' to '$env:SystemRoot\system32'."
+            Write-Log -message "Copying '$fileLGPO' to '$env:SystemRoot\system32'."
             Copy-Item -Path $fileLGPO -Destination "$env:SystemRoot\System32" -force        
         }
     } Else {
         $urlLGPO = 'https://download.microsoft.com/download/8/5/C/85C25433-A1B0-4FFA-9429-7E023E7DA8D8/LGPO.zip'
-        $LGPOZip = Get-InternetFile -Url $urlLGPO -OutputDirectory $Script:TempDir
+        $LGPOZip = Get-InternetFile -Url $urlLGPO -OutputDirectory $Script:TempDir -Verbose
         $outputDir = Join-Path $Script:TempDir -ChildPath 'LGPO'
         Expand-Archive -Path $LGPOZip -DestinationPath $outputDir
         Remove-Item $LGPOZip -Force
@@ -364,13 +403,13 @@ If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
 }
 
 $stigZip = Join-Path -Path $PSScriptRoot -ChildPath 'STIGs.zip'
-If (-not (Test-Path $stigZip)) {
+If (-not (Test-Path -Path $stigZip)) {
     #Download the STIG GPOs
     $uriSTIGs = 'https://public.cyber.mil/stigs/gpo'
     $uriGPODownload = Get-InternetUrl -Url $uriSTIGs -searchstring 'GPOs'
     Write-Output "Downloading STIG GPOs from `"$uriGPODownload`"."
     If ($uriGPODownload) {
-        $stigZip = Get-InternetFile -url $uriGPODownload -OutputDirectory $Script:TempDir
+        $stigZip = Get-InternetFile -url $uriGPODownload -OutputDirectory $Script:TempDir -Verbose
     }
 } 
 
@@ -393,7 +432,7 @@ ForEach ($gpoFolder in $arrGPOFolders) {
     Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
 }
 
-If ($Null -ne (Get-NetTCPConnection | Where-Object {$_.LocalPort -eq '5985' -or $_.LocalPort -eq '5986'})) {
+If ($AIB -eq $True) {
     # Applying Azure Image Builder Exceptions
     Write-Log -message "Applying Azure Image Builder Exceptions."
     $appName = 'AzureImageBuilder-Exceptions'
@@ -401,9 +440,40 @@ If ($Null -ne (Get-NetTCPConnection | Where-Object {$_.LocalPort -eq '5985' -or 
     Update-LocalGPOTextFile -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowBasic' -Delete
     #V-253419 The Windows Remote Management (WinRM) service must not allow unencrypted traffic.
     Update-LocalGPOTextFile -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowUnencryptedTraffic' -Delete
-    $lgpo = Start-Process -FilePath -FilePath "$env:SystemRoot\System32\lgpo.exe" -ArgumentList "/t $Script:TempDir\$appName-Computer.txt" -Wait -PassThru
-    Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
+    Invoke-LGPO -SearchTerm $appName -Verbose
 }
+Write-Log -message "Applying AVD Exceptions"
+$SecFileContent = @'
+[Unicode]
+Unicode=yes
+[Version]
+signature="$CHICAGO$"
+Revision=1
+[System Access]
+EnableAdminAccount = 1
+[Registry Values]
+MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\Pku2u\AllowOnlineID=4,1
+[Privilege Rights]
+SeRemoteInteractiveLogonRight = *S-1-5-32-555,*S-1-5-32-544
+SeDenyBatchLogonRight = *S-1-5-32-546
+SeDenyNetworkLogonRight = *S-1-5-32-546
+SeDenyInteractiveLogonRight = *S-1-5-32-546
+SeDenyRemoteInteractiveLogonRight = *S-1-5-32-546
+'@
+# Applying AVD Exceptions
+$SecFileContent | Out-File -FilePath "$Script:TempDir\AVDExceptions.inf" -Encoding unicode
+
+$appName = 'AVD-Exceptions'
+# Remove Setting that breaks AVD
+Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002' -RegistryValue 'EccCurves' -Delete -outfileprefix $appName -Verbose
+# Remove Firewall Configuration that breaks stand-alone workstation Remote Desktop.
+Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PrivateProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
+# Remove Edge Proxy Configuration
+Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Edge' -RegistryValue 'ProxySettings' -Delete -outfileprefix $appName -Verbose
+Invoke-LGPO -SearchTerm $appName -Verbose
+
 #Disable Secondary Logon Service
 #WN10-00-000175
 Write-Log -message "WN10-00-000175/V-220732: Disabling the Secondary Logon Service."
