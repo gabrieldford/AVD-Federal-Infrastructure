@@ -12,11 +12,6 @@
 #>
 
 #region Initialization
-[CmdletBinding()]
-param (
-    [bool]$AIB = $true
-)
-
 $Script:FullName = $MyInvocation.MyCommand.Path
 $Script:File = $MyInvocation.MyCommand.Name
 $Script:Name=[System.IO.Path]::GetFileNameWithoutExtension($Script:File)
@@ -398,7 +393,7 @@ ForEach ($gpoFolder in $arrGPOFolders) {
     Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
 }
 
-If ($AIB -eq $True) {
+If ($Null -ne (Get-NetTCPConnection | Where-Object {$_.LocalPort -eq '5985' -or $_.LocalPort -eq '5986'})) {
     # Applying Azure Image Builder Exceptions
     Write-Log -message "Applying Azure Image Builder Exceptions."
     $appName = 'AzureImageBuilder-Exceptions'
