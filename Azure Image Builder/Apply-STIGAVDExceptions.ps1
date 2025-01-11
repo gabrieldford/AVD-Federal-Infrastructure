@@ -236,8 +236,8 @@ Write-Output "Checking for lgpo.exe in '$env:SystemRoot\system32'."
 If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
     $LGPOZip = Join-Path -Path $PSScriptRoot -ChildPath 'LGPO.zip'
     If (Test-Path $LGPOZip) {
-        Write-Log -category Info -message "Expanding '$LGPO' to '$Script:TempDir'."
-        expand-archive -path "$lgpozip" -DestinationPath $Script:TempDir -force
+        Write-Log -category Info -message "Expanding '$LGPOZip' to '$Script:TempDir'."
+        Expand-Archive -path "$LGPOZip" -DestinationPath $Script:TempDir -force
         $algpoexe = Get-ChildItem -Path $Script:TempDir -filter 'lgpo.exe' -recurse
         If ($algpoexe.count -gt 0) {
             $fileLGPO = $algpoexe[0].FullName

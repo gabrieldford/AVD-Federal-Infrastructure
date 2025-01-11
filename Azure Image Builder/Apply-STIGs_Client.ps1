@@ -217,6 +217,7 @@ function Write-Log {
     $date = get-date
     $content = "[$date]`t$category`t`t$message`n" 
     Add-Content $Script:Log $content -ErrorAction Stop
+    Write-Output $Content
 }
 
 Function Set-BluetoothRadioStatus {
@@ -262,7 +263,7 @@ Write-Log -category Info -message "Starting '$PSCommandPath'."
 If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
     $LGPOZip = Join-Path -Path $PSScriptRoot -ChildPath 'LGPO.zip'
     If (Test-Path $LGPOZip) {
-        Write-Log -category Info -message "Expanding '$LGPO' to '$Script:TempDir'."
+        Write-Log -category Info -message "Expanding '$LGPOZip' to '$Script:TempDir'."
         expand-archive -path $LGPOZip -DestinationPath $Script:TempDir -force
         $algpoexe = Get-ChildItem -Path $Script:TempDir -filter 'lgpo.exe' -recurse
         If ($algpoexe.count -gt 0) {
