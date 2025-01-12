@@ -256,7 +256,7 @@ function Write-Log {
 
     $Date = get-date
     $Content = "[$Date]`t$Category`t`t$Message`n" 
-    Add-Content $Script:Log $content -ErrorAction Stop
+    #Add-Content $Script:Log $content -ErrorAction Stop
     If ($Verbose) {
         Write-Verbose $Content
     } Else {
