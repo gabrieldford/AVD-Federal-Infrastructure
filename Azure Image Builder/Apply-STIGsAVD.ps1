@@ -128,7 +128,7 @@ Function Get-InternetUrl {
     Process {
 
         Try {
-            Write-Log -Message -message "${CmdletName}: Now extracting download URL from '$Url'."
+            Write-Log -Message "${CmdletName}: Now extracting download URL from '$Url'."
             $HTML = Invoke-WebRequest -Uri $Url -UseBasicParsing
             $Links = $HTML.Links
             $ahref = $null
@@ -138,12 +138,12 @@ Function Get-InternetUrl {
                 $ahref = ($Links | Where-Object {$_.OuterHTML -like "*$searchstring*"}).href
             }
             If ($ahref.Count -eq 1) {
-                Write-Log -Message -Message "${CmdletName}: Download URL = '$ahref'"
+                Write-Log -Message  "${CmdletName}: Download URL = '$ahref'"
                 $ahref
 
             }
             Elseif ($ahref.Count -gt 1) {
-                Write-Log -Message -Message "${CmdletName}: Download URL = '$($ahref[0])'"
+                Write-Log -Message  "${CmdletName}: Download URL = '$($ahref[0])'"
                 $ahref[0]
             }
         }
@@ -152,7 +152,7 @@ Function Get-InternetUrl {
         }
     }
     End {
-        Write-Log -Message -Message "${CmdletName}: Ending ${CmdletName}"
+        Write-Log -Message  "${CmdletName}: Ending ${CmdletName}"
     }
 }
 
