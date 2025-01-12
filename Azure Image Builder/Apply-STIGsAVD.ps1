@@ -57,7 +57,6 @@ Function Get-InternetFile {
         If (!$OutputFileName) {
             Write-Log -Message "${CmdletName}: No OutputFileName specified. Trying to get file name from URL."
             If ((split-path -path $Url -leaf).Contains('.')) {
-
                 $OutputFileName = split-path -path $url -leaf
                 Write-Log -Message "${CmdletName}: Url contains file name - '$OutputFileName'."
             }
@@ -250,15 +249,23 @@ function Write-Log {
     Param (
         [Parameter(Mandatory=$false, Position=0)]
         [ValidateSet("Info","Warning","Error")]
-        $category = 'Info',
+        $Category = 'Info',
         [Parameter(Mandatory=$true, Position=1)]
-        $message
+        $Message
     )
 
-    $date = get-date
-    $content = "[$date]`t$category`t`t$message`n" 
+    $Date = get-date
+    $Content = "[$Date]`t$Category`t`t$Message`n" 
     Add-Content $Script:Log $content -ErrorAction Stop
-    Write-Output $Content
+    If ($Verbose) {
+        Write-Verbose $Content
+    } Else {
+        Switch ($Category) {
+            'Info' {Write-Host $content}
+            'Error' {Write-Error $Content}
+            'Warning' {Write-Warning $Content}
+        }
+    }
 }
 
 Function Set-BluetoothRadioStatus {
