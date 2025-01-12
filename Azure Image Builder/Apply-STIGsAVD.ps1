@@ -442,6 +442,9 @@ signature="$CHICAGO$"
 Revision=1
 [Privilege Rights]
 SeDenyNetworkLogonRight = *S-1-5-32-546
+[System Access]
+EnableAdminAccount = 1
+NewAdministratorName = "packer"
 '@
 If ($AIB -eq $True) {
     # Applying Azure Image Builder Exceptions
