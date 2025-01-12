@@ -98,12 +98,12 @@ Function Get-InternetFile {
                 }
             }
             Catch {
-                Write-Error "${CmdletName}: Error downloading file. Please check url."
+                Write-Error -Category Error -Message "${CmdletName}: Error downloading file. Please check url."
                 Return $Null
             }
         }
         Else {
-            Write-Error "${CmdletName}: No OutputFileName specified. Unable to download file."
+            Write-Log -Category Error -Message "${CmdletName}: No OutputFileName specified. Unable to download file."
             Return $Null
         }
     }
@@ -148,7 +148,7 @@ Function Get-InternetUrl {
             }
         }
         Catch {
-            Write-Error "${CmdletName}: Error Downloading HTML and determining link for download."
+            Write-Log -Category Error -Message "${CmdletName}: Error Downloading HTML and determining link for download."
         }
     }
     End {
@@ -386,17 +386,17 @@ Function Update-LocalGPOTextFile {
 #region Main
 
 New-Log -Path $Script:LogDir
-Write-Log -message "Starting '$PSCommandPath'."
+Write-Log -Message "Starting '$PSCommandPath'."
 
 If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
     $LGPOZip = Join-Path -Path $PSScriptRoot -ChildPath 'LGPO.zip'
     If (Test-Path -Path $LGPOZip) {
-        Write-Log -message "Expanding '$LGPOZip' to '$Script:TempDir'."
+        Write-Log -Message "Expanding '$LGPOZip' to '$Script:TempDir'."
         Expand-Archive -path $LGPOZip -DestinationPath $Script:TempDir -force
         $algpoexe = Get-ChildItem -Path $Script:TempDir -filter 'lgpo.exe' -recurse
         If ($algpoexe.count -gt 0) {
             $fileLGPO = $algpoexe[0].FullName
-            Write-Log -message "Copying '$fileLGPO' to '$env:SystemRoot\system32'."
+            Write-Log -Message "Copying '$fileLGPO' to '$env:SystemRoot\system32'."
             Copy-Item -Path $fileLGPO -Destination "$env:SystemRoot\System32" -force        
         }
     } Else {
@@ -424,12 +424,12 @@ If (-not (Test-Path -Path $stigZip)) {
 } 
 
 Expand-Archive -Path $stigZip -DestinationPath $Script:TempDir -Force
-Write-Log -message "Copying ADMX and ADML files to local system."
+Write-Log -Message "Copying ADMX and ADML files to local system."
 
 $null = Get-ChildItem -Path $Script:TempDir -File -Recurse -Filter '*.admx' | ForEach-Object { Copy-Item -Path $_.FullName -Destination "$env:WINDIR\PolicyDefinitions\" -Force }
 $null = Get-ChildItem -Path $Script:TempDir -Directory -Recurse | Where-Object {$_.Name -eq 'en-us'} | Get-ChildItem -File -recurse -filter '*.adml' | ForEach-Object { Copy-Item -Path $_.FullName -Destination "$env:WINDIR\PolicyDefinitions\en-us\" -Force }
 
-Write-Log -message "Getting List of Applicable GPO folders."
+Write-Log -Message "Getting List of Applicable GPO folders."
 $arrApplicableGPOs = Get-ChildItem -Path $Script:TempDir | Where-Object {$_.Name -like "DoD*Windows $osVersion*" -or $_.Name -like 'DoD*Edge*' -or $_.Name -like 'DoD*Firewall*' -or $_.Name -like 'DoD*Internet Explorer*' -or $_.Name -like 'DoD*Defender Antivirus*'} 
 [array]$arrGPOFolders = $null
 ForEach ($folder in $arrApplicableGPOs.FullName) {
@@ -437,9 +437,9 @@ ForEach ($folder in $arrApplicableGPOs.FullName) {
     $arrGPOFolders += $gpoFolderPath
 }
 ForEach ($gpoFolder in $arrGPOFolders) {
-    Write-Log -message "Running 'LGPO.exe /g `"$gpoFolder`"'"
+    Write-Log -Message "Running 'LGPO.exe /g `"$gpoFolder`"'"
     $lgpo = Start-Process -FilePath "$env:SystemRoot\System32\lgpo.exe" -ArgumentList "/g `"$gpoFolder`"" -Wait -PassThru
-    Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
+    Write-Log -Message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
 }
 $SecFileContent = @'
 [Unicode]
@@ -455,7 +455,7 @@ NewAdministratorName = "packer"
 '@
 If ($AIB -eq $True) {
     # Applying Azure Image Builder Exceptions
-    Write-Log -message "Applying Azure Image Builder Exceptions."
+    Write-Log -Message "Applying Azure Image Builder Exceptions."
     $appName = 'AzureImageBuilder-Exceptions'
     $SecFile = Join-Path -Path $Script:TempDir -ChildPath "$appName.inf"
     $SecFileContent | Out-File -FilePath $SecFile -Encoding unicode
@@ -465,11 +465,11 @@ If ($AIB -eq $True) {
     Update-LocalGPOTextFile -outfileprefix $appName -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowUnencryptedTraffic' -Delete
     Invoke-LGPO -SearchTerm $appName
     $winrm = Start-Process -FilePath winrm -ArgumentList 'set winrm/config/service @{AllowUnencrypted="true"}' -Passthru -Wait
-    Write-Log -message "winrm command to allow unencrypted comms exited with exit code $($winrm.exitcode)"
+    Write-Log -Message "winrm command to allow unencrypted comms exited with exit code $($winrm.exitcode)"
     $winrm = Start-Process -FilePath winrm -ArgumentList 'set winrm/config/service/auth @{Basic="true"}' -Passthru -Wait
-    Write-Log -message "winrm command to allow basic authentication exited with exit code $($winrm.exitcode)"
+    Write-Log -Message "winrm command to allow basic authentication exited with exit code $($winrm.exitcode)"
 }
-Write-Log -message "Applying AVD Exceptions"
+Write-Log -Message "Applying AVD Exceptions"
 $appName = 'AVD-Exceptions'
 $SecFileContent = @'
 [Unicode]
@@ -492,18 +492,18 @@ SeDenyRemoteInteractiveLogonRight = *S-1-5-32-546
 $SecFile = Join-Path -Path $Script:TempDir -ChildPath "$appName.inf"
 $SecFileContent | Out-File -FilePath $SecFile -Encoding unicode
 # Remove Setting that breaks AVD
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002' -RegistryValue 'EccCurves' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002' -RegistryValue 'EccCurves' -Delete -Verbose
 # Remove Firewall Configuration that breaks stand-alone workstation Remote Desktop.
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PrivateProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PrivateProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
 # Remove Edge Proxy Configuration
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Edge' -RegistryValue 'ProxySettings' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Edge' -RegistryValue 'ProxySettings' -Delete -Verbose
 Invoke-LGPO -SearchTerm $appName
 
 #Disable Secondary Logon Service
 #WN10-00-000175
-Write-Log -message "WN10-00-000175/V-220732: Disabling the Secondary Logon Service."
+Write-Log -Message "WN10-00-000175/V-220732: Disabling the Secondary Logon Service."
 $Service = 'SecLogon'
 $Serviceobject = Get-Service | Where-Object {$_.Name -eq $Service}
 If ($Serviceobject) {
@@ -526,10 +526,10 @@ V-220726 Windows 10
 V-253283 Windows 11
 #>
 If (-not ($virtualMachine)) {
-    Write-Log -message "WN10-00-000145/V-220726: Checking to see if DEP is enabled."
+    Write-Log -Message "WN10-00-000145/V-220726: Checking to see if DEP is enabled."
     $nxOutput = BCDEdit /enum '{current}' | Select-string nx
     if (-not($nxOutput -match "OptOut" -or $nxOutput -match "AlwaysOn")) {
-        Write-Log -message "DEP is not enabled. Enabling."
+        Write-Log -Message "DEP is not enabled. Enabling."
         # Determines bitlocker encrypted volumes
         $encryptedVolumes = (Get-BitLockerVolume | Where-Object {$_.ProtectionStatus -eq 'On'}).MountPoint
         if ($encryptedVolumes.Count -gt 0) {
@@ -540,21 +540,21 @@ If (-not ($virtualMachine)) {
             Start-Process -Wait -FilePath 'C:\Windows\System32\bcdedit.exe' -ArgumentList '/set "{current}" nx OptOut'
             foreach ($volume in $encryptedVolumes) {
                 Resume-BitLocker -MountPoint $volume
-                Write-Log -message "Resumed Protection."
+                Write-Log -Message "Resumed Protection."
             }
         }
         else {
             Start-Process -Wait -FilePath 'C:\Windows\System32\bcdedit.exe' -ArgumentList '/set "{current}" nx OptOut'
         }
     } Else {
-        Write-Log -message "DEP is already enabled."
+        Write-Log -Message "DEP is already enabled."
     }
 
     # WIN10-00-000210/220
-    Write-Log -message 'WIN10-00-000210/220: Disabling Bluetooth Radios.'
+    Write-Log -Message 'WIN10-00-000210/220: Disabling Bluetooth Radios.'
     Set-BluetoothRadioStatus -BluetoothStatus Off
 }
-Write-Log -message "Configuring Registry Keys that aren't policy objects."
+Write-Log -Message "Configuring Registry Keys that aren't policy objects."
 # WN10-CC-000039
 Reg.exe ADD "HKLM\SOFTWARE\Classes\batfile\shell\runasuser" /v SuppressionPolicy /d 4096 /t REG_DWORD /f
 Reg.exe ADD "HKLM\SOFTWARE\Classes\cmdfile\shell\runasuser" /v SuppressionPolicy /d 4096 /t REG_DWORD /f
@@ -562,9 +562,9 @@ Reg.exe ADD "HKLM\SOFTWARE\Classes\exefile\shell\runasuser" /v SuppressionPolicy
 Reg.exe ADD "HKLM\SOFTWARE\Classes\mscfile\shell\runasuser" /v SuppressionPolicy /d 4096 /t REG_DWORD /f
 
 # CVE-2013-3900
-Write-Log -message "CVE-2013-3900: Mitigating PE Installation risks."
+Write-Log -Message "CVE-2013-3900: Mitigating PE Installation risks."
 Reg.exe ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" /v EnableCertPaddingCheck /d 1 /t REG_DWORD /f
 Reg.exe ADD "HKLM\SOFTWARE\Microsoft\Cryptography\Wintrust\Config" /v EnableCertPaddingCheck /d 1 /t REG_DWORD /f
 
 Remove-Item -Path $Script:TempDir -Recurse -Force -ErrorAction SilentlyContinue
-Write-Log -message "Ending '$PSCommandPath'."
+Write-Log -Message "Ending '$PSCommandPath'."
