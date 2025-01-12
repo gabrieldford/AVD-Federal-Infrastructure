@@ -48,36 +48,36 @@ Function Get-InternetFile {
         $ProgressPreference = 'SilentlyContinue'
         ## Get the name of this function and write header
         [string]${CmdletName} = $PSCmdlet.MyInvocation.MyCommand.Name
-        Write-Verbose "Starting ${CmdletName} with the following parameters: $PSBoundParameters"
+        Write-Log -Message "Starting ${CmdletName} with the following parameters: $PSBoundParameters"
     }
     Process {
 
         $start_time = Get-Date
 
         If (!$OutputFileName) {
-            Write-Verbose "${CmdletName}: No OutputFileName specified. Trying to get file name from URL."
+            Write-Log -Message "${CmdletName}: No OutputFileName specified. Trying to get file name from URL."
             If ((split-path -path $Url -leaf).Contains('.')) {
 
                 $OutputFileName = split-path -path $url -leaf
-                Write-Verbose "${CmdletName}: Url contains file name - '$OutputFileName'."
+                Write-Log -Message "${CmdletName}: Url contains file name - '$OutputFileName'."
             }
             Else {
-                Write-Verbose "${CmdletName}: Url does not contain file name. Trying 'Location' Response Header."
+                Write-Log -Message "${CmdletName}: Url does not contain file name. Trying 'Location' Response Header."
                 $request = [System.Net.WebRequest]::Create($url)
                 $request.AllowAutoRedirect=$false
                 $response=$request.GetResponse()
                 $Location = $response.GetResponseHeader("Location")
                 If ($Location) {
                     $OutputFileName = [System.IO.Path]::GetFileName($Location)
-                    Write-Verbose "${CmdletName}: File Name from 'Location' Response Header is '$OutputFileName'."
+                    Write-Log -Message "${CmdletName}: File Name from 'Location' Response Header is '$OutputFileName'."
                 }
                 Else {
-                    Write-Verbose "${CmdletName}: No 'Location' Response Header returned. Trying 'Content-Disposition' Response Header."
+                    Write-Log -Message "${CmdletName}: No 'Location' Response Header returned. Trying 'Content-Disposition' Response Header."
                     $result = Invoke-WebRequest -Method GET -Uri $Url -UseBasicParsing
                     $contentDisposition = $result.Headers.'Content-Disposition'
                     If ($contentDisposition) {
                         $OutputFileName = $contentDisposition.Split("=")[1].Replace("`"","")
-                        Write-Verbose "${CmdletName}: File Name from 'Content-Disposition' Response Header is '$OutputFileName'."
+                        Write-Log -Message "${CmdletName}: File Name from 'Content-Disposition' Response Header is '$OutputFileName'."
                     }
                 }
             }
@@ -86,15 +86,15 @@ Function Get-InternetFile {
         If ($OutputFileName) { 
             $wc = New-Object System.Net.WebClient
             $OutputFile = Join-Path $OutputDirectory $OutputFileName
-            Write-Verbose "${CmdletName}: Downloading file at '$url' to '$OutputFile'."
+            Write-Log -Message "${CmdletName}: Downloading file at '$url' to '$OutputFile'."
             Try {
                 $wc.DownloadFile($url, $OutputFile)
                 $time = (Get-Date).Subtract($start_time).Seconds
                 
-                Write-Verbose "${CmdletName}: Time taken: '$time' seconds."
+                Write-Log -Message "${CmdletName}: Time taken: '$time' seconds."
                 if (Test-Path -Path $outputfile) {
                     $totalSize = (Get-Item $outputfile).Length / 1MB
-                    Write-Verbose "${CmdletName}: Download was successful. Final file size: '$totalsize' mb"
+                    Write-Log -Message "${CmdletName}: Download was successful. Final file size: '$totalsize' mb"
                     Return $OutputFile
                 }
             }
@@ -109,7 +109,7 @@ Function Get-InternetFile {
         }
     }
     End {
-        Write-Verbose "Ending ${CmdletName}"
+        Write-Log -Message "Ending ${CmdletName}"
     }
 }
 
@@ -124,12 +124,12 @@ Function Get-InternetUrl {
     Begin {
         ## Get the name of this function and write header
         [string]${CmdletName} = $PSCmdlet.MyInvocation.MyCommand.Name
-        Write-Verbose "${CmdletName}: Starting ${CmdletName} with the following parameters: $PSBoundParameters"
+        Write-Log -Message "${CmdletName}: Starting ${CmdletName} with the following parameters: $PSBoundParameters"
     }
     Process {
 
         Try {
-            Write-Verbose -message "${CmdletName}: Now extracting download URL from '$Url'."
+            Write-Log -Message -message "${CmdletName}: Now extracting download URL from '$Url'."
             $HTML = Invoke-WebRequest -Uri $Url -UseBasicParsing
             $Links = $HTML.Links
             $ahref = $null
@@ -139,12 +139,12 @@ Function Get-InternetUrl {
                 $ahref = ($Links | Where-Object {$_.OuterHTML -like "*$searchstring*"}).href
             }
             If ($ahref.Count -eq 1) {
-                Write-Verbose -Message "${CmdletName}: Download URL = '$ahref'"
+                Write-Log -Message -Message "${CmdletName}: Download URL = '$ahref'"
                 $ahref
 
             }
             Elseif ($ahref.Count -gt 1) {
-                Write-Verbose -Message "${CmdletName}: Download URL = '$($ahref[0])'"
+                Write-Log -Message -Message "${CmdletName}: Download URL = '$($ahref[0])'"
                 $ahref[0]
             }
         }
@@ -153,7 +153,7 @@ Function Get-InternetUrl {
         }
     }
     End {
-        Write-Verbose -Message "${CmdletName}: Ending ${CmdletName}"
+        Write-Log -Message -Message "${CmdletName}: Ending ${CmdletName}"
     }
 }
 
@@ -167,26 +167,29 @@ Function Invoke-LGPO {
         [string]${CmdletName} = $PSCmdlet.MyInvocation.MyCommand.Name
     }
     Process {
-        Write-Verbose "${CmdletName}: Gathering Registry text files for LGPO from '$InputDir'"
+        Write-Log -Message "${CmdletName}: Gathering Registry text files for LGPO from '$InputDir'"
+        Write-Log -Message "${CmdletName}: Gathering Security Templates files for LGPO from '$InputDir'"
+        [array]$RegistryFiles = @()
+        [array]$SecurityTemplates = @()
         If ($SearchTerm) {
-            $InputFiles = Get-ChildItem -Path $InputDir -Filter "$SearchTerm*.txt"
+            $RegistryFiles = Get-ChildItem -Path $InputDir -Filter "$SearchTerm*.txt"
+            $SecurityTemplates = Get-ChildItem -Path $InputDir -Filter "$SearchTerm*.inf"
         }
         Else {
-            $InputFiles = Get-ChildItem -Path $InputDir -Filter '*.txt'
+            $RegistryFiles = Get-ChildItem -Path $InputDir -Filter "*.txt"
+            $SecurityTemplates = Get-ChildItem -Path $InputDir -Filter '*.inf'
         }
-        ForEach ($RegistryFile in $inputFiles) {
+        ForEach ($RegistryFile in $RegistryFiles) {
             $TxtFilePath = $RegistryFile.FullName
-            Write-Verbose "${CmdletName}: Now applying settings from '$txtFilePath' to Local Group Policy via LGPO.exe."
+            Write-Log -Message "${CmdletName}: Now applying settings from '$txtFilePath' to Local Group Policy via LGPO.exe."
             $lgporesult = Start-Process -FilePath 'lgpo.exe' -ArgumentList "/t `"$TxtFilePath`"" -Wait -PassThru
-            Write-Verbose "${CmdletName}: LGPO exitcode: '$($lgporesult.exitcode)'"
+            Write-Log -Message "${CmdletName}: LGPO exitcode: '$($lgporesult.exitcode)'"
         }
-        Write-Verbose "${CmdletName}: Gathering Security Templates files for LGPO from '$InputDir'"
-        $ConfigFile = Get-ChildItem -Path $InputDir -Filter '*.inf'
-        If ($ConfigFile) {
-            $ConfigFile = $ConfigFile.FullName
-            Write-Verbose "${CmdletName}: Now applying security settings from '$ConfigFile' to Local Security Policy via LGPO.exe."
-            $lgporesult = Start-Process -FilePath 'lgpo.exe' -ArgumentList "/s `"$ConfigFile`"" -Wait -PassThru
-            Write-Verbose "${CmdletName}: LGPO exitcode: '$($lgporesult.exitcode)'"
+        ForEach ($SecurityTemplate in $SecurityTemplates) {        
+            $SecurityTemplate = $SecurityTemplate.FullName
+            Write-Log -Message "${CmdletName}: Now applying security settings from '$SecurityTemplate' to Local Security Policy via LGPO.exe."
+            $lgporesult = Start-Process -FilePath 'lgpo.exe' -ArgumentList "/s `"$SecurityTemplate`"" -Wait -PassThru
+            Write-Log -Message "${CmdletName}: LGPO exitcode: '$($lgporesult.exitcode)'"
         }
     }
     End {
@@ -351,7 +354,7 @@ Function Update-LocalGPOTextFile {
             $null = New-Item -Path $outputdir -Name "$OutFilePrefix-$Scope.txt" -ItemType File -ErrorAction Stop
         }
 
-        Write-Verbose "${CmdletName}: Adding registry information to '$outfile' for LGPO.exe"
+        Write-Log -Message "${CmdletName}: Adding registry information to '$outfile' for LGPO.exe"
         # Update file with information
         Add-Content -Path $Outfile -Value $Scope
         Add-Content -Path $Outfile -Value $RegistryKeyPath
@@ -396,7 +399,7 @@ If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
         Expand-Archive -Path $LGPOZip -DestinationPath $outputDir
         Remove-Item $LGPOZip -Force
         $fileLGPO = (Get-ChildItem -Path $outputDir -file -Filter 'lgpo.exe' -Recurse)[0].FullName
-        Write-Output "Copying `"$fileLGPO`" to System32"
+        Write-Log -Message "Copying `"$fileLGPO`" to System32"
         Copy-Item -Path $fileLGPO -Destination "$env:SystemRoot\System32" -Force
         Remove-Item -Path $outputDir -Recurse -Force
     }
@@ -407,7 +410,7 @@ If (-not (Test-Path -Path $stigZip)) {
     #Download the STIG GPOs
     $uriSTIGs = 'https://public.cyber.mil/stigs/gpo'
     $uriGPODownload = Get-InternetUrl -Url $uriSTIGs -searchstring 'GPOs'
-    Write-Output "Downloading STIG GPOs from `"$uriGPODownload`"."
+    Write-Log -Message "Downloading STIG GPOs from `"$uriGPODownload`"."
     If ($uriGPODownload) {
         $stigZip = Get-InternetFile -url $uriGPODownload -OutputDirectory $Script:TempDir -Verbose
     }
@@ -431,18 +434,33 @@ ForEach ($gpoFolder in $arrGPOFolders) {
     $lgpo = Start-Process -FilePath "$env:SystemRoot\System32\lgpo.exe" -ArgumentList "/g `"$gpoFolder`"" -Wait -PassThru
     Write-Log -message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
 }
-
+$SecFileContent = @'
+[Unicode]
+Unicode=yes
+[Version]
+signature="$CHICAGO$"
+Revision=1
+[Privilege Rights]
+SeDenyNetworkLogonRight = *S-1-5-32-546
+'@
 If ($AIB -eq $True) {
     # Applying Azure Image Builder Exceptions
     Write-Log -message "Applying Azure Image Builder Exceptions."
     $appName = 'AzureImageBuilder-Exceptions'
+    $SecFile = Join-Path -Path $Script:TempDir -ChildPath "$appName.inf"
+    $SecFileContent | Out-File -FilePath $SecFile -Encoding unicode
     #V-253418 Tje Windows Remote Management (WinRM) service must not use Basic authentication.
-    Update-LocalGPOTextFile -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowBasic' -Delete
+    Update-LocalGPOTextFile -outfileprefix $appName -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowBasic' -Delete
     #V-253419 The Windows Remote Management (WinRM) service must not allow unencrypted traffic.
-    Update-LocalGPOTextFile -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowUnencryptedTraffic' -Delete
-    Invoke-LGPO -SearchTerm $appName -Verbose
+    Update-LocalGPOTextFile -outfileprefix $appName -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowUnencryptedTraffic' -Delete
+    Invoke-LGPO -SearchTerm $appName
+    $winrm = Start-Process -FilePath winrm -ArgumentList 'set winrm/config/service @{AllowUnencrypted="true"}' -Passthru -Wait
+    Write-Log -message "winrm command to allow unencrypted comms exited with exit code $($winrm.exitcode)"
+    $winrm = Start-Process -FilePath winrm -ArgumentList 'set winrm/config/service/auth @{Basic="true"}' -Passthru -Wait
+    Write-Log -message "winrm command to allow basic authentication exited with exit code $($winrm.exitcode)"
 }
 Write-Log -message "Applying AVD Exceptions"
+$appName = 'AVD-Exceptions'
 $SecFileContent = @'
 [Unicode]
 Unicode=yes
@@ -461,18 +479,17 @@ SeDenyInteractiveLogonRight = *S-1-5-32-546
 SeDenyRemoteInteractiveLogonRight = *S-1-5-32-546
 '@
 # Applying AVD Exceptions
-$SecFileContent | Out-File -FilePath "$Script:TempDir\AVDExceptions.inf" -Encoding unicode
-
-$appName = 'AVD-Exceptions'
+$SecFile = Join-Path -Path $Script:TempDir -ChildPath "$appName.inf"
+$SecFileContent | Out-File -FilePath $SecFile -Encoding unicode
 # Remove Setting that breaks AVD
-Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002' -RegistryValue 'EccCurves' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002' -RegistryValue 'EccCurves' -Delete -outfileprefix $appName -Verbose
 # Remove Firewall Configuration that breaks stand-alone workstation Remote Desktop.
-Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
-Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PrivateProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
-Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PrivateProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -outfileprefix $appName -Verbose
 # Remove Edge Proxy Configuration
-Update-LocalGPOTextFile -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Edge' -RegistryValue 'ProxySettings' -Delete -outfileprefix $appName -Verbose
-Invoke-LGPO -SearchTerm $appName -Verbose
+Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Edge' -RegistryValue 'ProxySettings' -Delete -outfileprefix $appName -Verbose
+Invoke-LGPO -SearchTerm $appName
 
 #Disable Secondary Logon Service
 #WN10-00-000175
