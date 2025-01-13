@@ -87,10 +87,10 @@ var addsNsgRules = [
       sourcePortRange: '*'
       destinationPortRanges: [
         '88'
-        '123'
         '135'
         '389'
         '445'
+        '464'
         '636'
         '3268'
         '3269'
@@ -114,7 +114,9 @@ var addsNsgRules = [
       sourcePortRange: '*'
       destinationPortRanges: [
         '88'
+        '123'
         '389'
+        '464'
       ]
       protocol: 'Udp'
       sourceAddressPrefixes: [

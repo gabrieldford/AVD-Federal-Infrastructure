@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "11488231120029328682"
+      "templateHash": "17973407128394940173"
     }
   },
   "parameters": {
@@ -510,10 +510,10 @@
           "sourcePortRange": "*",
           "destinationPortRanges": [
             "88",
-            "123",
             "135",
             "389",
             "445",
+            "464",
             "636",
             "3268",
             "3269",
@@ -537,7 +537,9 @@
           "sourcePortRange": "*",
           "destinationPortRanges": [
             "88",
-            "389"
+            "123",
+            "389",
+            "464"
           ],
           "protocol": "Udp",
           "sourceAddressPrefixes": [
@@ -729,6 +731,10 @@
       {
         "name": "snet-avd-customimage-hosts",
         "addressPrefix": "10.0.2.64/26"
+      },
+      {
+        "name": "snet-avd-imagebuilds",
+        "addressPrefix": "10.0.2.176/28"
       },
       {
         "name": "snet-privateEndpoints",
@@ -960,7 +966,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "11306335846314554904"
+              "templateHash": "13539912280783497377"
             }
           },
           "parameters": {
@@ -1141,10 +1147,10 @@
                         "destinationAddresses": "[parameters('addsSubnetAddresses')]",
                         "destinationPorts": [
                           "88",
-                          "123",
                           "135",
                           "389",
                           "445",
+                          "464",
                           "636",
                           "3268",
                           "3269",
@@ -1161,7 +1167,9 @@
                         "destinationAddresses": "[parameters('addsSubnetAddresses')]",
                         "destinationPorts": [
                           "88",
-                          "389"
+                          "123",
+                          "389",
+                          "464"
                         ],
                         "ipProtocols": [
                           "UDP"

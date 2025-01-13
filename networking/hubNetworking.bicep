@@ -134,15 +134,15 @@ resource ruleCollectionGroup_ADDS_Inbound 'Microsoft.Network/firewallPolicies/ru
             sourceAddresses: avdSubnetAddresses
             destinationAddresses: addsSubnetAddresses
             destinationPorts: [
-              '88'
-              '123'
-              '135'
-              '389'
-              '445'
-              '636'
-              '3268'
-              '3269'
-              '49152-65535'
+              '88' // Kerberos
+              '135' // RPC
+              '389' // LDAP
+              '445' // SMB
+              '464' // Kerberos change/set password
+              '636' // LDAP SSL
+              '3268' // Global Catalog
+              '3269' // Global Catalog SSL
+              '49152-65535' // RPC dynamic ports
             ]
             ipProtocols: [
               'TCP'
@@ -155,7 +155,9 @@ resource ruleCollectionGroup_ADDS_Inbound 'Microsoft.Network/firewallPolicies/ru
             destinationAddresses: addsSubnetAddresses
             destinationPorts: [
               '88' // Kerberos
+              '123' // NTP
               '389' // LDAP
+              '464' // Kerberos change/set password
             ]
             ipProtocols: [
               'UDP'
