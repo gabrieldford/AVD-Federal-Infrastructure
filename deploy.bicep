@@ -86,16 +86,16 @@ var addsNsgRules = [
       direction: 'Inbound'
       sourcePortRange: '*'
       destinationPortRanges: [
-        '88'
-        '135'
-        '389'
-        '445'
-        '464'
-        '636'
-        '3268'
-        '3269'
-        '9389'
-        '49152-65535'
+        '88' // Kerberos
+        '135' // RPC
+        '389' // LDAP
+        '445' // SMB
+        '464' // Kerberos change/set password
+        '636' // LDAP SSL
+        '3268' // Global Catalog
+        '3269' // Global Catalog SSL
+        '9389' // AD DS Web Services
+        '49152-65535' // Dynamic RPC
       ]
       protocol: 'Tcp'
       sourceAddressPrefixes: [
@@ -114,10 +114,10 @@ var addsNsgRules = [
       direction: 'Inbound'
       sourcePortRange: '*'
       destinationPortRanges: [
-        '88'
-        '123'
-        '389'
-        '464'
+        '88' // Kerberos
+        '123' // NTP
+        '389' // LDAP
+        '464' // Kerberos change/set password
       ]
       protocol: 'Udp'
       sourceAddressPrefixes: [
