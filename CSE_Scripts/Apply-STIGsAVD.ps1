@@ -339,7 +339,7 @@ function Write-Log {
 
     $Date = get-date
     $Content = "[$Date]`t$Category`t`t$Message`n" 
-    #Add-Content $Script:Log $content -ErrorAction Stop
+    Add-Content $Script:Log $content -ErrorAction Stop
     If ($Verbose) {
         Write-Verbose $Content
     }
@@ -512,15 +512,14 @@ $null = Get-ChildItem -Path $Script:TempDir -File -Recurse -Filter '*.admx' | Fo
 $null = Get-ChildItem -Path $Script:TempDir -Directory -Recurse | Where-Object { $_.Name -eq 'en-us' } | Get-ChildItem -File -recurse -filter '*.adml' | ForEach-Object { Copy-Item -Path $_.FullName -Destination "$env:WINDIR\PolicyDefinitions\en-us\" -Force }
 
 Write-Log -Message "Getting List of Applicable GPO folders."
-
-$GPOFolders = Get-ChildItem -Path $Script:TempDir -Directory
-[array]$arrApplicableFolders = $GPOFolders | Where-Object { $_.Name -like "DoD*Windows $osVersion*" -or $_.Name -like 'DoD*Edge*' -or $_.Name -like 'DoD*Firewall*' -or $_.Name -like 'DoD*Internet Explorer*' -or $_.Name -like 'DoD*Defender Antivirus*' } 
-$InstalledAppsToSTIG = (Get-InstalledApplication -Name $ApplicationsToSTIG).Name
+$SubFolders = Get-ChildItem -Path $Script:TempDir -Directory
+[array]$ApplicableFolders = $SubFolders | Where-Object { $_.Name -like "DoD*Windows $osVersion*" -or $_.Name -like 'DoD*Edge*' -or $_.Name -like 'DoD*Firewall*' -or $_.Name -like 'DoD*Internet Explorer*' -or $_.Name -like 'DoD*Defender Antivirus*' } 
+$InstalledAppsToSTIG = (Get-InstalledApplication -Name $ApplicationsToSTIG).SearchString
 ForEach ($SearchString in $InstalledAppsToSTIG) {
-    $arrApplicableFolders += $GPOFolders | Where-Object ($_.Name -match "$SearchString")
+    $ApplicableFolders += $SubFolders | Where-Object {$_.Name -match "$SearchString"}
 }
 [array]$arrGPOFolders = @()
-ForEach ($folder in $arrApplicableGPOFolders.FullName) {
+ForEach ($folder in $ApplicableFolders.FullName) {
     $gpoFolderPath = (Get-ChildItem -Path $folder -Filter 'GPOs' -Directory).FullName
     $arrGPOFolders += $gpoFolderPath
 }
