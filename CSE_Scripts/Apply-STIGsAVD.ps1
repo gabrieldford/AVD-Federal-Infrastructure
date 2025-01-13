@@ -2,6 +2,8 @@
 .SYNOPSIS
     This script uses the local group policy object tool (lgpo.exe) to apply the applicable DISA STIGs GPOs either downloaded directly from CyberCom or
     the files are contained with this script in the root of a folder.
+.PARAMETER ApplicationsToSTIG
+    This parameter defines the third party applications that should be STIGd by this script. This needs to be defined as a JSON string to support Run Commands.
 .NOTES
     To use this script offline, download the lgpo tool from 'https://download.microsoft.com/download/8/5/C/85C25433-A1B0-4FFA-9429-7E023E7DA8D8/LGPO.zip' and store it in the root of the folder where the script is located.'
     to the root of the folder where this script is located. Then download the latest STIG GPOs ZIP from 'https://public.cyber.mil/stigs/gpo' and and save at at STIGs.zip in the root
@@ -9,22 +11,22 @@
 
     This script not only applies the GPO objects but it also applies some registry settings and other mitigations. Ensure that these other items still apply through the
     lifecycle of the script.
+
 #>
 [CmdletBinding()]
 param (
     [Parameter()]
-    [bool]$AIB = $True
+    [string]$ApplicationsToSTIG = '["Adobe Acrobat Pro", "Adobe Acrobat Reader", "Google Chrome", "Mozilla Firefox"]'
 )
 #region Initialization
 $Script:FullName = $MyInvocation.MyCommand.Path
 $Script:File = $MyInvocation.MyCommand.Name
 $Script:Name=[System.IO.Path]::GetFileNameWithoutExtension($Script:File)
-$virtualMachine = Get-WmiObject -Class Win32_ComputerSystem | Where-Object {$_.Model -match 'Virtual'}
 $osCaption = (Get-WmiObject -Class Win32_OperatingSystem).caption
 If ($osCaption -match 'Windows 11') { $osVersion = 11 } Else { $osVersion = 10 }
 [String]$Script:LogDir = "$($env:SystemRoot)\Logs\Configuration"
 If (-not(Test-Path -Path $Script:LogDir)) {
-    New-Item -Path $Script:LogDir -ItemType Dir -Force | Out-Null
+    New-Item -Path $Script:LogDir -ItemType Directory -Force | Out-Null
 }
 $Script:TempDir = Join-Path -Path $env:Temp -ChildPath $Script:Name
 If (Test-Path -Path $Script:TempDir) {Remove-Item -Path $Script:TempDir -Recurse -ErrorAction SilentlyContinue}
@@ -32,6 +34,111 @@ New-Item -Path $Script:TempDir -ItemType Directory -Force | Out-Null
 #endregion
 
 #region Functions
+
+Function ConvertFrom-JsonString {
+    [CmdletBinding()]
+    param (
+        [string]$JsonString,
+        [string]$Name,
+        [switch]$SensitiveValues      
+    )
+    If ($JsonString -ne '[]' -and $JsonString -ne $null) {
+        [array]$Array = $JsonString.replace('\', '') | ConvertFrom-Json
+        If ($Array.Length -gt 0) {
+            If ($SensitiveValues) {Write-Log -message "Array '$Name' has $($Array.Length) members"} Else {Write-Log -message "$($Name): '$($Array -join "', '")'"}
+            Return $Array
+        } Else {
+            Return $null
+        }            
+    } Else {
+        Return $null
+    }    
+}
+
+Function Get-InstalledApplication {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullorEmpty()]
+        [string[]]$Name
+    )
+
+    Begin {
+        [string[]]$regKeyApplications = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall', 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+    }
+    Process { 
+        ## Enumerate the installed applications from the registry for applications that have the "DisplayName" property
+        [psobject[]]$regKeyApplication = @()
+        ForEach ($regKey in $regKeyApplications) {
+            If (Test-Path -LiteralPath $regKey -ErrorAction 'SilentlyContinue' -ErrorVariable '+ErrorUninstallKeyPath') {
+                [psobject[]]$UninstallKeyApps = Get-ChildItem -LiteralPath $regKey -ErrorAction 'SilentlyContinue' -ErrorVariable '+ErrorUninstallKeyPath'
+                ForEach ($UninstallKeyApp in $UninstallKeyApps) {
+                    Try {
+                        [psobject]$regKeyApplicationProps = Get-ItemProperty -LiteralPath $UninstallKeyApp.PSPath -ErrorAction 'Stop'
+                        If ($regKeyApplicationProps.DisplayName) { [psobject[]]$regKeyApplication += $regKeyApplicationProps }
+                    }
+                    Catch {
+                        Continue
+                    }
+                }
+            }
+        }
+
+        ## Create a custom object with the desired properties for the installed applications and sanitize property details
+        [psobject[]]$installedApplication = @()
+        ForEach ($regKeyApp in $regKeyApplication) {
+            Try {
+                [string]$appDisplayName = ''
+                [string]$appDisplayVersion = ''
+                [string]$appPublisher = ''
+
+                ## Bypass any updates or hotfixes
+                If (($regKeyApp.DisplayName -match '(?i)kb\d+') -or ($regKeyApp.DisplayName -match 'Cumulative Update') -or ($regKeyApp.DisplayName -match 'Security Update') -or ($regKeyApp.DisplayName -match 'Hotfix')) {
+                    Continue
+                }
+
+                ## Remove any control characters which may interfere with logging and creating file path names from these variables
+                $appDisplayName = $regKeyApp.DisplayName -replace '[^\u001F-\u007F]', ''
+                $appDisplayVersion = $regKeyApp.DisplayVersion -replace '[^\u001F-\u007F]', ''
+                $appPublisher = $regKeyApp.Publisher -replace '[^\u001F-\u007F]', ''
+
+                ## Determine if application is a 64-bit application
+                [boolean]$Is64BitApp = If (($is64Bit) -and ($regKeyApp.PSPath -notmatch '^Microsoft\.PowerShell\.Core\\Registry::HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node')) { $true } Else { $false }
+
+                If ($name) {
+                    ## Verify if there is a match with the application name(s) passed to the script
+                    ForEach ($application in $Name) {
+                        $applicationMatched = $false
+                        #  Check for a contains application name match
+                        If ($regKeyApp.DisplayName -match [regex]::Escape($application)) {
+                            $applicationMatched = $true
+                        }
+
+                        If ($applicationMatched) {
+                            $installedApplication += New-Object -TypeName 'PSObject' -Property @{
+                                SearchString       = $name
+                                UninstallSubkey    = $regKeyApp.PSChildName
+                                ProductCode        = If ($regKeyApp.PSChildName -match $MSIProductCodeRegExPattern) { $regKeyApp.PSChildName } Else { [string]::Empty }
+                                DisplayName        = $appDisplayName
+                                DisplayVersion     = $appDisplayVersion
+                                UninstallString    = $regKeyApp.UninstallString
+                                InstallSource      = $regKeyApp.InstallSource
+                                InstallLocation    = $regKeyApp.InstallLocation
+                                InstallDate        = $regKeyApp.InstallDate
+                                Publisher          = $appPublisher
+                                Is64BitApplication = $Is64BitApp
+                            }
+                        }
+                    }
+                }
+            }
+            Catch {
+                Continue
+            }
+        }
+        Write-Output -InputObject $installedApplication
+    }
+}
 
 Function Get-InternetFile {
     [CmdletBinding()]
@@ -268,36 +375,49 @@ function Write-Log {
     }
 }
 
-Function Set-BluetoothRadioStatus {
+Function Set-RegistryValue {
     [CmdletBinding()]
-    Param (
-        [Parameter(Mandatory=$true)]
-        [ValidateSet('Off', 'On')]
-        [string]$BluetoothStatus
+    param (
+        [Parameter()]
+        [string]
+        $Name,
+        [Parameter()]
+        [string]
+        $Path,
+        [Parameter()]
+        [string]$PropertyType,
+        [Parameter()]
+        $Value
     )
-    If ((Get-Service bthserv).Status -eq 'Stopped') { Start-Service bthserv }
-    Try {
-        Add-Type -AssemblyName System.Runtime.WindowsRuntime
-        $asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
-        Function Await($WinRtTask, $ResultType) {
-            $asTask = $asTaskGeneric.MakeGenericMethod($ResultType)
-            $netTask = $asTask.Invoke($null, @($WinRtTask))
-            $netTask.Wait(-1) | Out-Null
-            $netTask.Result
+    Begin {
+        Write-Log -message "[Set-RegistryValue]: Setting Registry Value: $Name"
+    }
+    Process {
+        # Create the registry Key(s) if necessary.
+        If (!(Test-Path -Path $Path)) {
+            Write-Log -message "[Set-RegistryValue]: Creating Registry Key: $Path"
+            New-Item -Path $Path -Force | Out-Null
         }
-        [Windows.Devices.Radios.Radio,Windows.System.Devices,ContentType=WindowsRuntime] | Out-Null
-        [Windows.Devices.Radios.RadioAccessStatus,Windows.System.Devices,ContentType=WindowsRuntime] | Out-Null
-        Await ([Windows.Devices.Radios.Radio]::RequestAccessAsync()) ([Windows.Devices.Radios.RadioAccessStatus]) | Out-Null
-        $radios = Await ([Windows.Devices.Radios.Radio]::GetRadiosAsync()) ([System.Collections.Generic.IReadOnlyList[Windows.Devices.Radios.Radio]])
-        If ($radios) {
-            $bluetooth = $radios | Where-Object { $_.Kind -eq 'Bluetooth' }
+        # Check for existing registry setting
+        $RemoteValue = Get-ItemProperty -Path $Path -Name $Name -ErrorAction SilentlyContinue
+        If ($RemoteValue) {
+            # Get current Value
+            $CurrentValue = Get-ItemPropertyValue -Path $Path -Name $Name
+            Write-Log -message "[Set-RegistryValue]: Current Value of $($Path)\$($Name) : $CurrentValue"
+            If ($Value -ne $CurrentValue) {
+                Write-Log -message "[Set-RegistryValue]: Setting Value of $($Path)\$($Name) : $Value"
+                Set-ItemProperty -Path $Path -Name $Name -Value $Value -Force | Out-Null
+            } Else {
+                Write-Log -message "[Set-RegistryValue]: Value of $($Path)\$($Name) is already set to $Value"
+            }           
         }
-        If ($bluetooth) {
-            [Windows.Devices.Radios.RadioState,Windows.System.Devices,ContentType=WindowsRuntime] | Out-Null
-            Await ($bluetooth.SetStateAsync($BluetoothStatus)) ([Windows.Devices.Radios.RadioAccessStatus]) | Out-Null
+        Else {
+            Write-Log -message "[Set-RegistryValue]: Setting Value of $($Path)\$($Name) : $Value"
+            New-ItemProperty -Path $Path -Name $Name -PropertyType $PropertyType -Value $Value -Force | Out-Null
         }
-    } Catch {
-        Write-Warning "Set-BluetoothStatus function errored."
+        Start-Sleep -Milliseconds 500
+    }
+    End {
     }
 }
 
@@ -307,8 +427,12 @@ Function Update-LocalGPOTextFile {
         [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Delete')]
         [Parameter(Mandatory = $true, ParameterSetName = 'DeleteAllValues')]
+        [string]$OutFilePrefix,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Delete')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'DeleteAllValues')]
         [ValidateSet('Computer', 'User')]
-        [string]$scope,
+        [string]$Scope,
         [Parameter(Mandatory = $true, ParameterSetName = 'Set')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Delete')]
         [Parameter(Mandatory = $true, ParameterSetName = 'DeleteAllValues')]
@@ -327,8 +451,7 @@ Function Update-LocalGPOTextFile {
         [switch]$Delete,
         [Parameter(Mandatory = $false, ParameterSetName = 'DeleteAllValues')]
         [switch]$DeleteAllValues,
-        [string]$outputDir = $Script:TempDir,
-        [string]$outfileprefix = $appName
+        [string]$outputDir = $Script:TempDir
     )
     Begin {
         [string]${CmdletName} = $PSCmdlet.MyInvocation.MyCommand.Name
@@ -347,8 +470,7 @@ Function Update-LocalGPOTextFile {
                 $RegistryKeyPath = $RegistryKeyPath.Substring($index, $RegistryKeyPath.Length - $index)
                 $modified = $true
             }
-        }
-        
+        }        
         #Create the output file if needed.
         $Outfile = "$OutputDir\$Outfileprefix-$Scope.txt"
         If (-not (Test-Path -LiteralPath $Outfile)) {
@@ -387,6 +509,7 @@ Function Update-LocalGPOTextFile {
 
 New-Log -Path $Script:LogDir
 Write-Log -Message "Starting '$PSCommandPath'."
+[array]$AppsToSTIG = ConvertFrom-JsonString -JsonString $ApplicationsToSTIG -Name 'AppsToSTIG'
 
 If (-not(Test-Path -Path "$env:SystemRoot\System32\Lgpo.exe")) {
     $LGPOZip = Join-Path -Path $PSScriptRoot -ChildPath 'LGPO.zip'
@@ -430,9 +553,15 @@ $null = Get-ChildItem -Path $Script:TempDir -File -Recurse -Filter '*.admx' | Fo
 $null = Get-ChildItem -Path $Script:TempDir -Directory -Recurse | Where-Object {$_.Name -eq 'en-us'} | Get-ChildItem -File -recurse -filter '*.adml' | ForEach-Object { Copy-Item -Path $_.FullName -Destination "$env:WINDIR\PolicyDefinitions\en-us\" -Force }
 
 Write-Log -Message "Getting List of Applicable GPO folders."
-$arrApplicableGPOs = Get-ChildItem -Path $Script:TempDir | Where-Object {$_.Name -like "DoD*Windows $osVersion*" -or $_.Name -like 'DoD*Edge*' -or $_.Name -like 'DoD*Firewall*' -or $_.Name -like 'DoD*Internet Explorer*' -or $_.Name -like 'DoD*Defender Antivirus*'} 
-[array]$arrGPOFolders = $null
-ForEach ($folder in $arrApplicableGPOs.FullName) {
+
+$GPOFolders = Get-ChildItem -Path $Script:TempDir -Directory
+[array]$arrApplicableFolders = $GPOFolders | Where-Object {$_.Name -like "DoD*Windows $osVersion*" -or $_.Name -like 'DoD*Edge*' -or $_.Name -like 'DoD*Firewall*' -or $_.Name -like 'DoD*Internet Explorer*' -or $_.Name -like 'DoD*Defender Antivirus*'} 
+$InstalledAppsToSTIG = (Get-InstalledApplication -Name $AppsToSTIG).Name
+ForEach($SearchString in $InstalledAppsToSTIG) {
+   $arrApplicableFolders += $GPOFolders | Where-Object ($_.Name -match "$SearchString")
+}
+[array]$arrGPOFolders = @()
+ForEach ($folder in $arrApplicableGPOFolders.FullName) {
     $gpoFolderPath = (Get-ChildItem -Path $folder -Filter 'GPOs' -Directory).FullName
     $arrGPOFolders += $gpoFolderPath
 }
@@ -441,36 +570,9 @@ ForEach ($gpoFolder in $arrGPOFolders) {
     $lgpo = Start-Process -FilePath "$env:SystemRoot\System32\lgpo.exe" -ArgumentList "/g `"$gpoFolder`"" -Wait -PassThru
     Write-Log -Message "'lgpo.exe' exited with code [$($lgpo.ExitCode)]."
 }
-$SecFileContent = @'
-[Unicode]
-Unicode=yes
-[Version]
-signature="$CHICAGO$"
-Revision=1
-[Privilege Rights]
-SeDenyNetworkLogonRight = *S-1-5-32-546
-[System Access]
-EnableAdminAccount = 1
-NewAdministratorName = "packer"
-'@
-If ($AIB -eq $True) {
-    # Applying Azure Image Builder Exceptions
-    Write-Log -Message "Applying Azure Image Builder Exceptions."
-    $appName = 'AzureImageBuilder-Exceptions'
-    $SecFile = Join-Path -Path $Script:TempDir -ChildPath "$appName.inf"
-    $SecFileContent | Out-File -FilePath $SecFile -Encoding unicode
-    #V-253418 Tje Windows Remote Management (WinRM) service must not use Basic authentication.
-    Update-LocalGPOTextFile -outfileprefix $appName -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowBasic' -Delete
-    #V-253419 The Windows Remote Management (WinRM) service must not allow unencrypted traffic.
-    Update-LocalGPOTextFile -outfileprefix $appName -scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Windows\WinRM\Service' -RegistryValue 'AllowUnencryptedTraffic' -Delete
-    Invoke-LGPO -SearchTerm $appName
-    $winrm = Start-Process -FilePath winrm -ArgumentList 'set winrm/config/service @{AllowUnencrypted="true"}' -Passthru -Wait
-    Write-Log -Message "winrm command to allow unencrypted comms exited with exit code $($winrm.exitcode)"
-    $winrm = Start-Process -FilePath winrm -ArgumentList 'set winrm/config/service/auth @{Basic="true"}' -Passthru -Wait
-    Write-Log -Message "winrm command to allow basic authentication exited with exit code $($winrm.exitcode)"
-}
+
 Write-Log -Message "Applying AVD Exceptions"
-$appName = 'AVD-Exceptions'
+$OutputFilePrefix = 'AVD-Exceptions'
 $SecFileContent = @'
 [Unicode]
 Unicode=yes
@@ -489,17 +591,17 @@ SeDenyInteractiveLogonRight = *S-1-5-32-546
 SeDenyRemoteInteractiveLogonRight = *S-1-5-32-546
 '@
 # Applying AVD Exceptions
-$SecFile = Join-Path -Path $Script:TempDir -ChildPath "$appName.inf"
-$SecFileContent | Out-File -FilePath $SecFile -Encoding unicode
+$SecTemplate = Join-Path -Path $Script:TempDir -ChildPath "$OutputFilePrefix.inf"
+$SecFileContent | Out-File -FilePath $SecTemplate -Encoding unicode
 # Remove Setting that breaks AVD
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002' -RegistryValue 'EccCurves' -Delete -Verbose
+Update-LocalGPOTextFile -outfileprefix $OutputFilePrefix -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002' -RegistryValue 'EccCurves' -Delete -Verbose
 # Remove Firewall Configuration that breaks stand-alone workstation Remote Desktop.
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PrivateProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
+Update-LocalGPOTextFile -outfileprefix $OutputFilePrefix -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
+Update-LocalGPOTextFile -outfileprefix $OutputFilePrefix -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PrivateProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
+Update-LocalGPOTextFile -outfileprefix $OutputFilePrefix -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\WindowsFirewall\PublicProfile' -RegistryValue 'AllowLocalPolicyMerge' -Delete -Verbose
 # Remove Edge Proxy Configuration
-Update-LocalGPOTextFile -outfileprefix $appName -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Edge' -RegistryValue 'ProxySettings' -Delete -Verbose
-Invoke-LGPO -SearchTerm $appName
+Update-LocalGPOTextFile -outfileprefix $OutputFilePrefix -Scope 'Computer' -RegistryKeyPath 'SOFTWARE\Policies\Microsoft\Edge' -RegistryValue 'ProxySettings' -Delete -Verbose
+Invoke-LGPO -SearchTerm $OutputFilePrefix
 
 #Disable Secondary Logon Service
 #WN10-00-000175
@@ -509,7 +611,7 @@ $Serviceobject = Get-Service | Where-Object {$_.Name -eq $Service}
 If ($Serviceobject) {
     $StartType = $ServiceObject.StartType
     If ($StartType -ne 'Disabled') {
-        start-process -FilePath "reg.exe" -ArgumentList "ADD HKLM\System\CurrentControlSet\Services\SecLogon /v Start /d 4 /T REG_DWORD /f" -PassThru -Wait
+        Set-RegistryValue -Name Start -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\seclogon' -PropertyType DWORD -Value 4
     }
     If ($ServiceObject.Status -ne 'Stopped') {
         Try {
@@ -520,51 +622,17 @@ If ($Serviceobject) {
     }
 }
 
-<# Enables DEP. If there are bitlocker encrypted volumes, bitlocker is temporarily suspended for this operation
-Configure DEP to at least OptOut
-V-220726 Windows 10
-V-253283 Windows 11
-#>
-If (-not ($virtualMachine)) {
-    Write-Log -Message "WN10-00-000145/V-220726: Checking to see if DEP is enabled."
-    $nxOutput = BCDEdit /enum '{current}' | Select-string nx
-    if (-not($nxOutput -match "OptOut" -or $nxOutput -match "AlwaysOn")) {
-        Write-Log -Message "DEP is not enabled. Enabling."
-        # Determines bitlocker encrypted volumes
-        $encryptedVolumes = (Get-BitLockerVolume | Where-Object {$_.ProtectionStatus -eq 'On'}).MountPoint
-        if ($encryptedVolumes.Count -gt 0) {
-            Write-Log -EventId 1 -Message "Encrypted Drive Found. Suspending encryption temporarily."
-            foreach ($volume in $encryptedVolumes) {
-                Suspend-BitLocker -MountPoint $volume -RebootCount 0
-            }
-            Start-Process -Wait -FilePath 'C:\Windows\System32\bcdedit.exe' -ArgumentList '/set "{current}" nx OptOut'
-            foreach ($volume in $encryptedVolumes) {
-                Resume-BitLocker -MountPoint $volume
-                Write-Log -Message "Resumed Protection."
-            }
-        }
-        else {
-            Start-Process -Wait -FilePath 'C:\Windows\System32\bcdedit.exe' -ArgumentList '/set "{current}" nx OptOut'
-        }
-    } Else {
-        Write-Log -Message "DEP is already enabled."
-    }
-
-    # WIN10-00-000210/220
-    Write-Log -Message 'WIN10-00-000210/220: Disabling Bluetooth Radios.'
-    Set-BluetoothRadioStatus -BluetoothStatus Off
-}
 Write-Log -Message "Configuring Registry Keys that aren't policy objects."
 # WN10-CC-000039
-Reg.exe ADD "HKLM\SOFTWARE\Classes\batfile\shell\runasuser" /v SuppressionPolicy /d 4096 /t REG_DWORD /f
-Reg.exe ADD "HKLM\SOFTWARE\Classes\cmdfile\shell\runasuser" /v SuppressionPolicy /d 4096 /t REG_DWORD /f
-Reg.exe ADD "HKLM\SOFTWARE\Classes\exefile\shell\runasuser" /v SuppressionPolicy /d 4096 /t REG_DWORD /f
-Reg.exe ADD "HKLM\SOFTWARE\Classes\mscfile\shell\runasuser" /v SuppressionPolicy /d 4096 /t REG_DWORD /f
+Set-RegistryValue -Name SuppressionPolicy -Path 'HKLM:\SOFTWARE\Classes\batfile\shell\runasuser' -PropertyType DWORD -Value 4096
+Set-RegistryValue -Name SuppressionPolicy -Path 'HKLM:\SOFTWARE\Classes\cmdfile\shell\runasuser' -PropertyType DWORD -Value 4096
+Set-RegistryValue -Name SuppressionPolicy -Path 'HKLM:\SOFTWARE\Classes\exefile\shell\runasuser' -PropertyType DWORD -Value 4096
+Set-RegistryValue -Name SuppressionPolicy -Path 'HKLM:\SOFTWARE\Classes\mscfile\shell\runasuser' -PropertyType DWORD -Value 4096
 
 # CVE-2013-3900
 Write-Log -Message "CVE-2013-3900: Mitigating PE Installation risks."
-Reg.exe ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" /v EnableCertPaddingCheck /d 1 /t REG_DWORD /f
-Reg.exe ADD "HKLM\SOFTWARE\Microsoft\Cryptography\Wintrust\Config" /v EnableCertPaddingCheck /d 1 /t REG_DWORD /f
+Set-RegistryValue -Name EnableCertPaddingCheck -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Cryptography\WinTrust\Config' -PropertyType DWORD -Value 1
+Set-RegistryValue -Name EnableCertPaddingCheck -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography\WinTrust\Config' -PropertyType DWORD -Value 1
 
 Remove-Item -Path $Script:TempDir -Recurse -Force -ErrorAction SilentlyContinue
 Write-Log -Message "Ending '$PSCommandPath'."
