@@ -94,6 +94,7 @@ var addsNsgRules = [
         '636'
         '3268'
         '3269'
+        '9389'
         '49152-65535'
       ]
       protocol: 'Tcp'
