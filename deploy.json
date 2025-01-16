@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "7785345374656935217"
+      "templateHash": "5053694466201647152"
     }
   },
   "parameters": {
@@ -804,7 +804,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "9041056934079117559"
+              "templateHash": "3185605618211208479"
             }
           },
           "parameters": {
@@ -862,7 +862,9 @@
                     ],
                     "destinations": [
                       "[parameters('logAnalyticsWorkspaceName')]"
-                    ]
+                    ],
+                    "transformKql": "source",
+                    "outputStream": "Microsoft-Event"
                   }
                 ],
                 "destinations": {

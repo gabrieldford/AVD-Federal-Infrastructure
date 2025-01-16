@@ -39,14 +39,17 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
           'Microsoft-Event'
         ]
         destinations: [
-          logAnalyticsWorkspaceName
+          logAnalyticsWorkspace.name
         ]
+        transformKql: 'source'
+        outputStream: 'Microsoft-Event'
+
       }
     ]
     destinations: {
       logAnalytics: [
         {
-          name: logAnalyticsWorkspaceName
+          name: logAnalyticsWorkspace.name
           workspaceResourceId: logAnalyticsWorkspace.id
         }
       ]
