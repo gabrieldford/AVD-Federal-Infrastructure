@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.32.4.45862",
-      "templateHash": "5053694466201647152"
+      "templateHash": "12804369796701979764"
     }
   },
   "parameters": {
@@ -804,7 +804,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.32.4.45862",
-              "templateHash": "3185605618211208479"
+              "templateHash": "5529376911790996706"
             }
           },
           "parameters": {
@@ -823,68 +823,174 @@
           },
           "resources": [
             {
-              "type": "Microsoft.OperationalInsights/workspaces",
-              "apiVersion": "2023-09-01",
-              "name": "[parameters('logAnalyticsWorkspaceName')]",
-              "location": "[parameters('location')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "logAnalyticsWorkspace",
               "properties": {
-                "sku": {
-                  "name": "PerGB2018"
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "logAnalyticsWorkspaceName": {
+                    "value": "[parameters('logAnalyticsWorkspaceName')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "tags": {
+                    "value": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.OperationalInsights/workspaces'), createObject())]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.32.4.45862",
+                      "templateHash": "12614043365804180520"
+                    }
+                  },
+                  "parameters": {
+                    "logAnalyticsWorkspaceName": {
+                      "type": "string"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.OperationalInsights/workspaces",
+                      "apiVersion": "2023-09-01",
+                      "name": "[parameters('logAnalyticsWorkspaceName')]",
+                      "location": "[parameters('location')]",
+                      "properties": {
+                        "sku": {
+                          "name": "PerGB2018"
+                        }
+                      },
+                      "tags": "[parameters('tags')]"
+                    }
+                  ],
+                  "outputs": {
+                    "name": {
+                      "type": "string",
+                      "value": "[parameters('logAnalyticsWorkspaceName')]"
+                    },
+                    "resourceId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+                    }
+                  }
                 }
-              },
-              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.OperationalInsights/workspaces'), createObject())]"
+              }
             },
             {
-              "type": "Microsoft.Insights/dataCollectionRules",
-              "apiVersion": "2023-03-11",
-              "name": "[parameters('dataCollectionRuleName')]",
-              "location": "[parameters('location')]",
-              "tags": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Insights/dataCollectionRules'), createObject())]",
-              "kind": "Windows",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "dataCollectionRule",
               "properties": {
-                "dataSources": {
-                  "windowsEventLogs": [
-                    {
-                      "streams": [
-                        "Microsoft-Event"
-                      ],
-                      "xPathQueries": [
-                        "Security!*[System[(band(Keywords,13510798882111488))]]"
-                      ],
-                      "name": "eventLogsDataSource"
-                    }
-                  ]
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
                 },
-                "dataFlows": [
-                  {
-                    "streams": [
-                      "Microsoft-Event"
-                    ],
-                    "destinations": [
-                      "[parameters('logAnalyticsWorkspaceName')]"
-                    ],
-                    "transformKql": "source",
-                    "outputStream": "Microsoft-Event"
+                "mode": "Incremental",
+                "parameters": {
+                  "dataCollectionRuleName": {
+                    "value": "[parameters('dataCollectionRuleName')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "logAnalyticsWorkspaceName": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', 'logAnalyticsWorkspace'), '2022-09-01').outputs.name.value]"
+                  },
+                  "tags": {
+                    "value": "[coalesce(tryGet(parameters('tagsByResourceType'), 'Microsoft.Insights/dataCollectionRules'), createObject())]"
                   }
-                ],
-                "destinations": {
-                  "logAnalytics": [
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.32.4.45862",
+                      "templateHash": "1746050431270157471"
+                    }
+                  },
+                  "parameters": {
+                    "dataCollectionRuleName": {
+                      "type": "string"
+                    },
+                    "location": {
+                      "type": "string"
+                    },
+                    "logAnalyticsWorkspaceName": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    }
+                  },
+                  "resources": [
                     {
-                      "name": "[parameters('logAnalyticsWorkspaceName')]",
-                      "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+                      "type": "Microsoft.Insights/dataCollectionRules",
+                      "apiVersion": "2023-03-11",
+                      "name": "[parameters('dataCollectionRuleName')]",
+                      "location": "[parameters('location')]",
+                      "tags": "[parameters('tags')]",
+                      "kind": "Windows",
+                      "properties": {
+                        "dataSources": {
+                          "windowsEventLogs": [
+                            {
+                              "streams": [
+                                "Microsoft-Event"
+                              ],
+                              "xPathQueries": [
+                                "Security!*[System[(band(Keywords,13510798882111488))]]"
+                              ],
+                              "name": "eventLogsDataSource"
+                            }
+                          ]
+                        },
+                        "dataFlows": [
+                          {
+                            "streams": [
+                              "Microsoft-Event"
+                            ],
+                            "destinations": [
+                              "[parameters('logAnalyticsWorkspaceName')]"
+                            ]
+                          }
+                        ],
+                        "destinations": {
+                          "logAnalytics": [
+                            {
+                              "name": "[parameters('logAnalyticsWorkspaceName')]",
+                              "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+                            }
+                          ]
+                        }
+                      }
                     }
                   ]
                 }
               },
               "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+                "[resourceId('Microsoft.Resources/deployments', 'logAnalyticsWorkspace')]"
               ]
             }
           ],
           "outputs": {
             "logAnalyticsWorkspaceId": {
               "type": "string",
-              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+              "value": "[reference(resourceId('Microsoft.Resources/deployments', 'logAnalyticsWorkspace'), '2022-09-01').outputs.resourceId.value]"
             }
           }
         }
