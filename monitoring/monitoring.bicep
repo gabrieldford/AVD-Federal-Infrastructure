@@ -43,7 +43,6 @@ resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
         ]
         transformKql: 'source'
         outputStream: 'Microsoft-Event'
-
       }
     ]
     destinations: {
