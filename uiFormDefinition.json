@@ -149,7 +149,7 @@
 									"label": "Virtual Machine Size",
 									"toolTip": "Select the size of the virtual machines. Multi-session hosts should have 4 - 24 vCPUs. Single session host should have 2 or more vCPUs.",
 									"recommendedSizes": [
-										"Standard_B2ms",
+										"Standard_B4ms",
 										"Standard_D2as_v5",
 										"Standard_DS2_v2"
 									],

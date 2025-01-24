@@ -82,7 +82,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-03-01' = {
 }
 
 module localVnetPeering 'virtual-network-peering.bicep' = {
-  name: 'localVnetPeering-${deploymentSuffix}'
+  name: 'localVnetPeering-${vnetName}-${deploymentSuffix}'
   params: {
     allowForwardedTraffic: true
     allowVirtualNetworkAccess: true
@@ -96,7 +96,7 @@ module localVnetPeering 'virtual-network-peering.bicep' = {
 }
 
 module remoteVnetPeering 'virtual-network-peering.bicep' = {
-  name: 'remoteVnetPeering-${deploymentSuffix}'
+  name: 'remoteVnetPeering-${vnetName}-${deploymentSuffix}'
   scope: resourceGroup(split(hubVnetResourceId, '/')[4])
   params: {
     allowForwardedTraffic: true
