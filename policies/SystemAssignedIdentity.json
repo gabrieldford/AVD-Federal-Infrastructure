@@ -1,6 +1,5 @@
 {
     "mode": "Indexed",
-    "version": "1.0.0",
     "parameters": {
         "effect": {
             "type": "String",
