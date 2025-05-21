@@ -2,7 +2,7 @@
 
 ## Federal Testing
 
-I am using this code to deploy AVD infrasture to the Federal environment. This does not do the AVD it only does the infrastructure. 
+I am using this code to deploy AVD infrasture to the Federal environment. This does not do the AVD it only does the infrastructure. I need to delete the quick start.
 
 ## Quick Start
 
