@@ -1,5 +1,9 @@
 # Azure Virtual Desktop Lab Landing Zone
 
+## Federal Testing
+
+I am using this code to deploy AVD infrasture to the Federal environment. This does not do the AVD it only does the infrastructure. 
+
 ## Quick Start
 
 [![Deploy to Azure Commercial](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2Fdeploy.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fshawntmeyer%2FAVDFedRockstarTraining%2Fmain%2FuiFormDefinition.json)
