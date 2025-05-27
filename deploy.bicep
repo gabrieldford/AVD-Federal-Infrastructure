@@ -13,13 +13,13 @@ param adAdminUsername string = 'ADAdmin'
 param adAdminPassword string
 
 @description('IMPORTANT: Two-part internal AD name - short/NB name will be first part (\'contoso\'). The short name will be reused and should be unique when deploying this template in your selected region. If a name is reused, DNS name collisions may occur.')
-param adDomainName string
+param adDomainName string = 'fedcontoso'
 
 @description('An array of availability zones to use for firewall deployment. If not provided, firewall will be deployed in a single zone.')
 param availabilityZones array = []
 
 @description('This needs to be specified in order to have a uniform logon experience within AVD')
-param entraIdPrimaryOrCustomDomainName string
+param entraIdPrimaryOrCustomDomainName string = 'gdffederalavd.onmicrosoft.us'
 
 @description('Enter the password that will be applied to each user account to be created in AD.')
 @secure()
@@ -368,7 +368,7 @@ module monitoring 'monitoring/monitoring.bicep' = {
     rgs
   ]
 }
-
+/*
 module hubNetworking 'networking/hubNetworking.bicep' = {
   scope: resourceGroup(resourceGroups[1])
   name: 'hub-networking-${deploymentSuffix}'
@@ -503,3 +503,4 @@ module managementVm 'compute/managementVm.bicep' = {
     domainController
   ]
 }
+*/
